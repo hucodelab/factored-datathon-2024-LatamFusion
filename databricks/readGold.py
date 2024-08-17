@@ -31,25 +31,46 @@ display(events)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+
+# COMMAND ----------
+
 country_selected = 'CH'  # Reemplaza 'CH' con el nombre del país que deseas filtrar
-events_filtered = events[events['Country'] == country_selected].copy()
-#events_filtered = events_filtered.set_index('DATE')
+events_filtered = events[events.Country == country_selected].copy()
+
+# COMMAND ----------
+
+events_filtered['DATE'] = pd.to_datetime(events_filtered['DATE'])
+events_filtered.set_index('DATE', inplace=True)
 
 # COMMAND ----------
 
 #temp variables
-events_filtered.DATE = pd.DatetimeIndex(events_filtered.DATE)
-events_filtered['DATE'].dtype
+#events_filtered.DATE = pd.DatetimeIndex(events_filtered.DATE)
+#events_filtered['DATE'].dtype
 
 
 # COMMAND ----------
 
-events_filtered.index = pd.PeriodIndex(events_filtered.DATE, freq='d')
 events_filtered.head()
 
 # COMMAND ----------
 
-events_filtered['ToneWA','GoldsteinScaleWA'] = events_filtered['ToneWA','GoldsteinScaleWA'].astype(float)
+#events_filtered.index=pd.DatetimeIndex(events_filtered['DATE'], freq='D')
+#events_filtered.drop(columns=['DATE'], inplace=True)
+
+# COMMAND ----------
+
+events_filtered.head()
+
+# COMMAND ----------
+
+events_filtered['GoldsteinScaleWA'] = events_filtered['GoldsteinScaleWA'].astype(float)
+
+# COMMAND ----------
+
+events_filtered['ToneWA'] = events_filtered['ToneWA'].astype(float)
 
 # COMMAND ----------
 
@@ -57,17 +78,28 @@ events_filtered.dtypes
 
 # COMMAND ----------
 
-events_filtered['day'] = events_filtered['DATE'].dt.day
-events_filtered['week'] = events_filtered['DATE'].dt.isocalendar().week
-events_filtered['month'] = events_filtered['DATE'].dt.month
-events_filtered['year'] = events_filtered['DATE'].dt.year
-events_filtered['day_of_week'] = events_filtered['DATE'].dt.dayofweek
+events_filtered['day'] = events_filtered.index.day
+events_filtered['week'] = events_filtered.index.week
+events_filtered['month'] = events_filtered.index.month
+events_filtered['year'] = events_filtered.index.year
+events_filtered['day_of_week'] = events_filtered.index.dayofweek
+
+# COMMAND ----------
+
+events_filtered.sort_index(ascending=True, inplace=True)
+events_filtered.head()
 
 # COMMAND ----------
 
 plt.style.use('ggplot')
 plt.rcParams['figure.figsize'] = (15, 10)
-events_filtered.plot(kind = "line", y = ['ToneWA', 'GoldsteinScaleWA']);
+events_filtered.plot(kind = "line", y = ['GoldsteinScaleWA']);
+
+# COMMAND ----------
+
+plt.style.use('ggplot')
+plt.rcParams['figure.figsize'] = (15, 10)
+events_filtered.plot(kind = "line", y = ['ToneWA'], color='blue');
 
 # COMMAND ----------
 
@@ -124,13 +156,41 @@ plt.plot(y_test.index, y_test_pred, label='Predicción - Test Set', color='red',
 plt.title('Tendencia de GoldsteinScale: Valores Reales (Train) y Predicciones (Test)')
 plt.xlabel('Date')
 plt.ylabel('GoldsteinScale')
+plt.ylim([-5, 5])
 plt.legend()
 plt.grid(True)
 plt.show()
 
 # COMMAND ----------
 
-zoom_start_train = 30000
+y_test_pred = time_model.predict(X_test)
+
+# Crear la gráfica combinada
+plt.figure(figsize=(14, 7))
+
+# Graficar los valores reales de GoldsteinScale en el conjunto de entrenamiento
+plt.plot(y_train.index, y_train, label='Valor Real - Train Set', color='blue')
+
+# Graficar las predicciones de GoldsteinScale en el conjunto de prueba
+plt.plot(y_test.index, y_test_pred, label='Predicción - Test Set', color='red', linestyle='--')
+
+# Graficar los valores reales de GoldsteinScale en el conjunto de prueba
+plt.plot(y_test.index, y_test, label='Valor Real - Test Set', color='green')
+
+# Configuraciones de la gráfica
+plt.title('Tendencia de GoldsteinScale: Valores Reales (Train), Predicciones (Test) y Valores Reales (Test)')
+plt.xlabel('Date')
+plt.ylabel('GoldsteinScale')
+plt.ylim([-5, 5])
+plt.xlim([pd.Timestamp('2023-09-01'), pd.Timestamp('2024-08-10')]) 
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+# COMMAND ----------
+
+zoom_start_train = 1000
 zoom_end_train = 40000
 
 # Asegurarse de que el rango de índices esté dentro de los límites
@@ -155,3 +215,7 @@ plt.ylabel('GoldsteinScale')
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# COMMAND ----------
+
+
