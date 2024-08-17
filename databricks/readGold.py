@@ -32,18 +32,42 @@ display(events)
 # COMMAND ----------
 
 country_selected = 'CH'  # Reemplaza 'CH' con el nombre del país que deseas filtrar
-events_filtered = events[events['Country'] == country_selected]
+events_filtered = events[events['Country'] == country_selected].copy()
 #events_filtered = events_filtered.set_index('DATE')
 
 # COMMAND ----------
 
 #temp variables
-events_filtered['DATE'] = pd.to_datetime(events_filtered['DATE'])
+events_filtered.DATE = pd.DatetimeIndex(events_filtered.DATE)
+events_filtered['DATE'].dtype
+
+
+# COMMAND ----------
+
+events_filtered.index = pd.PeriodIndex(events_filtered.DATE, freq='d')
+events_filtered.head()
+
+# COMMAND ----------
+
+events_filtered['ToneWA','GoldsteinScaleWA'] = events_filtered['ToneWA','GoldsteinScaleWA'].astype(float)
+
+# COMMAND ----------
+
+events_filtered.dtypes
+
+# COMMAND ----------
+
 events_filtered['day'] = events_filtered['DATE'].dt.day
 events_filtered['week'] = events_filtered['DATE'].dt.isocalendar().week
 events_filtered['month'] = events_filtered['DATE'].dt.month
 events_filtered['year'] = events_filtered['DATE'].dt.year
 events_filtered['day_of_week'] = events_filtered['DATE'].dt.dayofweek
+
+# COMMAND ----------
+
+plt.style.use('ggplot')
+plt.rcParams['figure.figsize'] = (15, 10)
+events_filtered.plot(kind = "line", y = ['ToneWA', 'GoldsteinScaleWA']);
 
 # COMMAND ----------
 
