@@ -63,8 +63,8 @@ weightedAvgGoldsteinToneGold.write.format("csv").mode("overwrite").option("merge
 
 # COMMAND ----------
 
-from pyspark.sql.functions import col
-display(weighted_avg_df.orderBy(col('DATE').desc()))
+# from pyspark.sql.functions import col
+# display(weighted_avg_df.orderBy(col('DATE').desc()))
 
 # COMMAND ----------
 
