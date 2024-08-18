@@ -218,4 +218,26 @@ plt.show()
 
 # COMMAND ----------
 
+# train = pd.DataFrame({
+#     'y_train.index': y_train.index,
+#     'y_train': y_train.values
+# })
 
+# test = pd.DataFrame({
+#     'y_test.index': y_test.index,
+#     'y_pred': y_test_pred
+# })
+
+# real = pd.DataFrame({
+#     'y_test.index': y_test.index,
+#     'y_real': y_test
+# })
+# y_test.index, y_test
+
+# # Save DataFrame to a CSV file in Databricks
+# csv_path = '/Workspace/Shared/real.csv'  # The /dbfs/ prefix is used to write files to DBFS
+
+# real.to_csv(csv_path, index=False)
+
+# # Verify that the file is saved correctly (optional)
+# dbutils.fs.ls('dbfs:/Workspace/Shared/')
