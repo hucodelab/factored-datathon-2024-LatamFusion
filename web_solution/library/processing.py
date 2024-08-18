@@ -10,7 +10,7 @@ def process_df_to_plot():
         dataset.columns = ["date", "goldstein"]
         dataset["date"] = pd.to_datetime(dataset["date"])
 
-    return datasets
+    return {name: dataset for name, dataset in zip(names, datasets)}
 
 
 def download_csv_from_blob(storage_account_url, container_name, blob_name, sas_token):

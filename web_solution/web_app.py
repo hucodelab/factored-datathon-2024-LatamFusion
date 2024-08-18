@@ -1,42 +1,56 @@
-import os
-import sys
-
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import taipy.gui.builder as tgb
 from library.processing import process_df_to_plot
 from taipy.gui import Gui
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+datasets_dict = process_df_to_plot()
 
-# Process the data
-train, test, real = process_df_to_plot()
+# ts_plot_config = {
+#     "name_df": datasets_dict.keys(),
+#     "names": datasets_dict.keys().mapping(lambda x: x.capitalize()),
+#     "colors": ["blue", "orange", "green"],
+# }
 
 
-# Function to plot the time series
-def plot_time_series():
-    fig, ax = plt.subplots()
-    ax.plot(train["date"], train["goldstein"], label="Train", color="blue")
-    ax.plot(test["date"], test["goldstein"], label="Test", color="orange")
-    ax.plot(real["date"], real["goldstein"], label="Real", color="green")
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Goldstein")
-    ax.legend()
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+def create_time_series_plot():
+    # Extract datasets
+    train_df = datasets_dict["train"]
+    test_df = datasets_dict["test"]
+    real_df = datasets_dict["real"]
+
+    trace_train = go.Scatter(
+        x=train_df["date"],
+        y=train_df["goldstein"],
+        mode="lines",
+        name="Train",
+        line=dict(color="blue"),
+    )
+
+    trace_test = go.Scatter(
+        x=test_df["date"],
+        y=test_df["goldstein"],
+        mode="lines",
+        name="Test",
+        line=dict(color="orange"),
+    )
+
+    trace_real = go.Scatter(
+        x=real_df["date"],
+        y=real_df["goldstein"],
+        mode="lines",
+        name="Real",
+        line=dict(color="green"),
+    )
+
+    fig = go.Figure(data=[trace_train, trace_test, trace_real])
+
     return fig
 
 
-# Define the Taipy GUI
-page = """
-# Time Series Dashboard
+fig = create_time_series_plot()
 
-<|toggle_section|label=Plot|expanded=True|>
+with tgb.Page() as page:
+    tgb.text("# Latam Fusion Dashboard", mode="md")
+    tgb.chart(figure="{fig}")
 
-<|part|chart|>
-"""
-
-# Chart is linked to the `plot_time_series` function
-chart = plot_time_series()
-
-# Set up and run the GUI
-gui = Gui(page=page, chart=chart)
-gui.run()
+Gui(page).run()
