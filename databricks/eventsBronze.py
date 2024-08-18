@@ -59,7 +59,7 @@ spark.conf.set(
 
 file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/weightedAvgGoldsteinToneGold.csv"
 weightedAvgGoldsteinToneGold = weightedAvgGoldsteinToneGold.coalesce(1)
-weightedAvgGoldsteinToneGold.write.format("csv").mode("overwrite").option("mergeSchema", "true").save(file_path)
+weightedAvgGoldsteinToneGold.write.format("csv").mode("overwrite").option("mergeSchema", "true").option('header', 'true').save(file_path)
 
 # COMMAND ----------
 
