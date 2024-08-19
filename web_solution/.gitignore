@@ -2,5 +2,5 @@ examples/
 venv/
 tmp
 .env
-.bak
+*.bak
 __pycache__/
