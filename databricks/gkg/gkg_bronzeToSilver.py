@@ -44,6 +44,7 @@ df = df.withColumn("date0", to_date("DATE", "yyyyMMdd"))
 df = df.select("date0", "THEMES", "TONE")
 df = df.dropna(subset=["date0", "THEMES", "TONE"])
 df = df.withColumn("THEMES_ARRAY", split(df["THEMES"], ";"))
+
 # Explode the THEMES_ARRAY column
 # df = df.withColumn("THEME", explode("THEMES_ARRAY"))
 
@@ -62,6 +63,22 @@ df_grouped = df_exploded.groupBy("THEMES_EXPLODED").agg(count("*").alias("count"
 
 # Step 3: Sort by count in descending order to find the most common values
 df_sorted = df_grouped.orderBy(col("count").desc())
+
+# COMMAND ----------
+
+# HERE WE WRITE ALL THE THEMES TO THE GOLD LAYER TO THEN PROCESS THEM USING NLP TO TAG EACH NEW
+storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+storage_account_name = "factoredatathon2024"
+container_name = "gold"
+
+spark.conf.set(
+    f"fs.azure.account.key.{storage_account_name}.blob.core.windows.net",
+    f"{storage_account_key}"
+)
+
+file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/gkg/themesSortedGold.csv"
+# weightedAvgGoldsteinToneGold = df_sorted.coalesce(1)
+df_sorted.coalesce(1).write.format("csv").mode("overwrite").option("mergeSchema", "true").option('header', 'true').save(file_path)
 
 # COMMAND ----------
 
