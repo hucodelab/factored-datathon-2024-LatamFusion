@@ -44,8 +44,6 @@ weightedAvgGoldsteinToneGold = eventsDAGASilver1.groupBy("DATE","ActionGeo_Count
 # # Show the result
 # weighted_avg_df.show()
 
-
-
 # COMMAND ----------
 
 storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
@@ -59,43 +57,9 @@ spark.conf.set(
 
 file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/weightedAvgGoldsteinToneGold.csv"
 weightedAvgGoldsteinToneGold = weightedAvgGoldsteinToneGold.coalesce(1)
-weightedAvgGoldsteinToneGold.write.format("csv").mode("overwrite").option("mergeSchema", "true").save(file_path)
+weightedAvgGoldsteinToneGold.write.format("csv").mode("overwrite").option("mergeSchema", "true").option('header', 'true').save(file_path)
 
 # COMMAND ----------
 
-# from pyspark.sql.functions import col
-# display(weighted_avg_df.orderBy(col('DATE').desc()))
-
-# COMMAND ----------
-
-# Assuming 'df' is your DataFrame
-null_counts = eventsDAGASilver1.select(
-    [F.count(F.when(F.col(c).isNull(), c)).alias(c) for c in eventsDAGASilver1.columns]
-)
-
-display(null_counts)
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-display(null_counts)
-
-# COMMAND ----------
-
-eventsBronze
-
-# COMMAND ----------
-
-display(eventsBronze)
-
-# COMMAND ----------
-
-eventsBronze.columns
-
-# COMMAND ----------
-
-print(df_read.count())
+# print(df_read.count())
 # 46 millions of rows !!!
