@@ -53,4 +53,4 @@ with tgb.Page() as page:
     tgb.text("# Latam Fusion Dashboard", mode="md")
     tgb.chart(figure="{fig}")
 
-Gui(page).run()
+Gui(page).run(host="0.0.0.0", port=5000)
