@@ -245,6 +245,21 @@ events_filtered['day_of_week'] = events_filtered.index.dayofweek
 
 # COMMAND ----------
 
+events_filtered['day_sin'] = np.sin(2 * np.pi * events_filtered['day'] / 31)
+events_filtered['day_cos'] = np.cos(2 * np.pi * events_filtered['day'] / 31)
+events_filtered['week_sin'] = np.sin(2 * np.pi * events_filtered['week'] / 52)
+events_filtered['week_cos'] = np.cos(2 * np.pi * events_filtered['week'] / 52)
+events_filtered['month_sin'] = np.sin(2 * np.pi * events_filtered['month'] / 12)
+events_filtered['month_cos'] = np.cos(2 * np.pi * events_filtered['month'] / 12)
+cycle_length = 10
+events_filtered['year_sin'] = np.sin(2 * np.pi * events_filtered['year'] / cycle_length)
+events_filtered['year_cos'] = np.cos(2 * np.pi * events_filtered['year'] / cycle_length)
+events_filtered['day_of_week_sin'] = np.sin(2 * np.pi * events_filtered['day_of_week'] / 7)
+events_filtered['day_of_week_cos'] = np.cos(2 * np.pi * events_filtered['day_of_week'] / 7)
+
+
+# COMMAND ----------
+
 events_filtered.sort_index(ascending=True, inplace=True)
 events_filtered.head()
 
@@ -289,7 +304,13 @@ events_filtered.dropna(inplace=True)
 # COMMAND ----------
 
 
-X = events_filtered[['day', 'week', 'month', 'year', 'day_of_week', 'GoldsteinScaleWA_lag1','GoldsteinScaleWA_lag7','GoldsteinScaleWA_lag30', 'ToneWA_lag1','GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+#X = events_filtered[['day', 'week', 'month', 'year', 'day_of_week', 'GoldsteinScaleWA_lag1','GoldsteinScaleWA_lag7','GoldsteinScaleWA_lag30', 'ToneWA_lag1','GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+
+X = events_filtered[['day_sin', 'day_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos', 
+                     'year_sin', 'year_cos', 'day_of_week_sin', 'day_of_week_cos', 
+                     'GoldsteinScaleWA_lag1', 'GoldsteinScaleWA_lag7', 'GoldsteinScaleWA_lag30', 
+                     'ToneWA_lag1', 'GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+
 y = events_filtered['GoldsteinScaleWA']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
@@ -392,7 +413,12 @@ from sklearn.model_selection import GridSearchCV
 # COMMAND ----------
 
 
-X = events_filtered[['day', 'week', 'month', 'year', 'day_of_week', 'GoldsteinScaleWA_lag1','GoldsteinScaleWA_lag7','GoldsteinScaleWA_lag30', 'ToneWA_lag1','GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+#X = events_filtered[['day', 'week', 'month', 'year', 'day_of_week', 'GoldsteinScaleWA_lag1','GoldsteinScaleWA_lag7','GoldsteinScaleWA_lag30', 'ToneWA_lag1','GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+X = events_filtered[['day_sin', 'day_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos', 
+                     'year_sin', 'year_cos', 'day_of_week_sin', 'day_of_week_cos', 
+                     'GoldsteinScaleWA_lag1', 'GoldsteinScaleWA_lag7', 'GoldsteinScaleWA_lag30', 
+                     'ToneWA_lag1', 'GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+
 y = events_filtered['GoldsteinScaleWA']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
@@ -406,7 +432,7 @@ param_grid = {
     'max_depth': [None, 1, 2, 3, 4, 5, 10],
     'min_samples_split': [10, 20, 30],
     'min_samples_leaf': [4, 5, 6, 7],
-    'max_features': ['1.0', 'sqrt', 'log2']
+    'max_features': ['auto', 'sqrt', 'log2']
 }
 
 # Configurar GridSearchCV
@@ -486,7 +512,12 @@ plt.show()
 # COMMAND ----------
 
 
-X = events_filtered[['day', 'week', 'month', 'year', 'day_of_week', 'GoldsteinScaleWA_lag1','GoldsteinScaleWA_lag7','GoldsteinScaleWA_lag30', 'ToneWA_lag1','GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+#X = events_filtered[['day', 'week', 'month', 'year', 'day_of_week', 'GoldsteinScaleWA_lag1','GoldsteinScaleWA_lag7','GoldsteinScaleWA_lag30', 'ToneWA_lag1','GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+X = events_filtered[['day_sin', 'day_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos', 
+                     'year_sin', 'year_cos', 'day_of_week_sin', 'day_of_week_cos', 
+                     'GoldsteinScaleWA_lag1', 'GoldsteinScaleWA_lag7', 'GoldsteinScaleWA_lag30', 
+                     'ToneWA_lag1', 'GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+
 y = events_filtered['GoldsteinScaleWA']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
