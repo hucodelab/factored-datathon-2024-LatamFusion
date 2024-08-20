@@ -1,11 +1,3 @@
-.vscode
-
-# VSCode files
-# Specific configuration files
-.vscode/settings.json
-# Tasks for CI/CD (we don't have so ignore for now)
-.vscode/tasks.json
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

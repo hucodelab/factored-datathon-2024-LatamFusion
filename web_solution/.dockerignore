@@ -1,0 +1,8 @@
+dev_notebooks/
+examples/
+__pycache__/
+venv/
+Makefile
+.git
+*.bak
+.gitignore

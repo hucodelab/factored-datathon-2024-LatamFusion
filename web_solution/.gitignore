@@ -1,0 +1,6 @@
+examples/
+venv/
+tmp
+.env
+*.bak
+__pycache__/
