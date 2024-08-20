@@ -4,6 +4,7 @@ import pandas as pd
 
 # COMMAND ----------
 
+# HERE IS READING FROM READING FROM STORAGE ACCOUNT
 storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
 storage_account_name = "factoredatathon2024"
 container_name = "gold"
@@ -16,6 +17,32 @@ spark.conf.set(
 file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/gkg/themesSortedGold.csv"
 df = spark.read.format("csv").option("header", "true").load(file_path)
 df = df.dropna(subset=["THEMES_EXPLODED"])
+
+# COMMAND ----------
+
+### HERE YOU CAN READ FROM AZURE SQL
+# Define the JDBC URL
+jdbc_hostname = "factoredata2024.database.windows.net"
+jdbc_port = 1433
+jdbc_database = "dactoredata2024"
+jdbc_url = f"jdbc:sqlserver://{jdbc_hostname}:{jdbc_port};database={jdbc_database}"
+
+# Define the connection properties
+connection_properties = {
+    "user": "factoredata2024admin",
+    "password": "mdjdmliipo3^%^$5mkkm63",
+    "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+}
+
+# Define your SQL query
+sql_query = "(SELECT THEMES_EXPLODED FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '') AS tmp"
+
+# Load data from Azure SQL Database into a DataFrame
+df = spark.read.jdbc(url=jdbc_url, table=sql_query, properties=connection_properties)
+
+# COMMAND ----------
+
+df.show()
 
 # COMMAND ----------
 
