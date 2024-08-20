@@ -1,6 +1,9 @@
 # Databricks notebook source
 import numpy as np
 import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 # COMMAND ----------
 
@@ -51,15 +54,16 @@ themes_list = list(themes['THEMES_EXPLODED'])
 
 # COMMAND ----------
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
+themes_list
+
+# COMMAND ----------
+
 
 # Ejemplo básico de clustering
 vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
 X = vectorizer.fit_transform(themes_list)  # themes_list es la lista de temas
 
-scaler = StandardScaler()
+#scaler = StandardScaler()
 # X_scaled = scaler.fit_transform(X)  # X es tu matriz TF-IDF o embeddings
 
 # kmeans = KMeans(n_clusters=10, random_state=42)
@@ -93,3 +97,42 @@ len(themes.query('Cluster == 0'))
 
 # df.count()
 # 54912 themes
+
+# COMMAND ----------
+
+X
+
+# COMMAND ----------
+
+import numpy as np
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+
+# COMMAND ----------
+
+themes = pd.DataFrame(themes_list )
+themes.columns = ["themes"]
+
+# COMMAND ----------
+
+themes
+
+# COMMAND ----------
+
+themes_list
+
+# COMMAND ----------
+
+themes['THEMES_EXPLODED'] = themes['THEMES_EXPLODED'].apply(lambda x: x.split(','))
+
+# COMMAND ----------
+
+themes_list = themes['THEMES_EXPLODED'].to_list()
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
