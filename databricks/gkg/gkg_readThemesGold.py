@@ -35,7 +35,7 @@ connection_properties = {
 }
 
 # Define your SQL query
-sql_query = "(SELECT THEMES_EXPLODED FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '') AS tmp"
+sql_query = "(SELECT THEMES_EXPLODED FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '' and count > 100) AS tmp"
 
 # Load data from Azure SQL Database into a DataFrame
 df = spark.read.jdbc(url=jdbc_url, table=sql_query, properties=connection_properties)
