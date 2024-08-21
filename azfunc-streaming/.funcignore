@@ -1,7 +1,19 @@
+# Git files
 .git*
+.gitignore
+
+# VSCode files
 .vscode
+
+# Azurite files
 __azurite_db*__.json
 __blobstorage__
 __queuestorage__
+
+# Local files
 local.settings.json
+__pycache__/
+venv/
+
+# Test files
 test

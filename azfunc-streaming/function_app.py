@@ -37,7 +37,8 @@ BLOB_CONTAINER_NAME = os.getenv("BLOB_CONTAINER_NAME")
 
 # Temp directory, base URL for GDELT data, and Blob Service Client
 TEMP_DIR = tempfile.gettempdir()
-BASE_URL = "http://data.gdeltproject.org/events"
+BASE_URL_EVENTS = "http://data.gdeltproject.org/events"
+BASE_URL_GKG = "http://data.gdeltproject.org/gkg"
 BLOB_SERVICE_CLIENT = BlobServiceClient.from_connection_string(
     STORAGE_CONNECTION_STRING
 )
@@ -103,10 +104,31 @@ def upload_file_to_blob(filename):
         logging.error(f"Failed to upload {filename} to blob storage. Error: {e}")
 
 
+def execute_complete_extract_load(file_url: str, filename: str) -> None:
+    """
+    Execute the complete EL process for a given file.
+
+    Arguments
+    ---------
+    file_url : str
+        The URL of the file to download.
+    filename : str
+        The name of the file to save the downloaded content to and to upload.
+
+    """
+    try:
+        if download_file(file_url, filename):
+            upload_file_to_blob(filename)
+            os.remove(os.path.join(TEMP_DIR, filename))
+    except Exception as e:
+        logging.error(f"Failed to process {filename}.")
+        logging.error(f"Error: {e}")
+
+
 @app.function_name("streaming_gdelt")
 @app.schedule(
-    # schedule="0 0 3,9,15,21 * * *",
-    schedule="0 */1 * * * *",
+    # schedule="0 */1 * * * *",  # Uncomment for testing every minute
+    schedule="0 30 8 */1 * *",
     arg_name="streamingcron",
     run_on_startup=False,  # Always False in production. True for testing only.
     use_monitor=False,
@@ -119,17 +141,10 @@ def streaming_gdelt(streamingcron) -> None:
     today = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
     date = today.strftime("%Y%m%d")
     # Construct file name and URL for the GDELT file
-    file_name = f"{date}.export.CSV.zip"
-    file_url = f"{BASE_URL}/{file_name}"
+    file_name_events = f"{date}.export.CSV.zip"
+    file_name_gkg = f"{date}.gkg.csv.zip"
+    file_url_events = f"{BASE_URL_EVENTS}/{file_name_events}"
+    file_url_gkg = f"{BASE_URL_GKG}/{file_name_gkg}"
 
-    # Download the file
-    try:
-        if download_file(file_url, file_name):
-            # Upload the file to Azure Blob Storage
-            upload_file_to_blob(file_name)
-
-            # Clean up the local file after upload
-            os.remove(os.path.join(TEMP_DIR, file_name))
-    except Exception as e:
-        logging.error(f"Failed to process {file_name}.")
-        logging.error(f"Error: {e}")
+    execute_complete_extract_load(file_url_events, file_name_events)
+    execute_complete_extract_load(file_url_gkg, file_name_gkg)
