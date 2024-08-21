@@ -1,5 +1,5 @@
 name: Web App CI/CD
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+run-name: Running CI/CD for our web application 🚀
 on:
     push:
         branches:
