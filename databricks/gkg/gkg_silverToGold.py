@@ -37,3 +37,7 @@ df_reduced = df.filter(col("date0") > "2023-08-01")
 # COMMAND ----------
 
 
+=======
+dbfs_path_delta = "/mnt/silver/themesMappedSilver"
+# Read the Delta table into a DataFrame
+labels = spark.read.format("delta").load(dbfs_path_delta)
