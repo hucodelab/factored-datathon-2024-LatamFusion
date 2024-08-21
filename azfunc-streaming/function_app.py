@@ -1,13 +1,33 @@
+"""
+Azure Function to fetch GDELT data and upload to Azure Blob Storage.
+
+It is triggered by a timer trigger and downloads the GDELT events and GKG
+files for the previous day. The files are then uploaded to Azure Blob
+Storage.
+
+
+Notes
+-----
+
+When deploying this function app you should always make sure to set this
+environment variable in the Azure Function App settings:
+`WEBSITES_ENABLE_APP_SERVICE_STORAGE` = False
+
+This variable controls whether the `/home/` directory is persisted across
+function app restarts and shared across duplicated instances when scaling
+up. Since for our case we are just downloading and uploading files via a
+time trigger, we don't need this functionality.
+
+"""
+
 import datetime
 import logging
 import os
+import tempfile
 
 import azure.functions as func
 import requests
 from azure.storage.blob import BlobServiceClient
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = func.FunctionApp()
 
@@ -15,15 +35,35 @@ app = func.FunctionApp()
 STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 BLOB_CONTAINER_NAME = os.getenv("BLOB_CONTAINER_NAME")
 
-
-# Base URL for GDELT events
+# Temp directory, base URL for GDELT data, and Blob Service Client
+TEMP_DIR = tempfile.gettempdir()
 BASE_URL = "http://data.gdeltproject.org/events"
+BLOB_SERVICE_CLIENT = BlobServiceClient.from_connection_string(
+    STORAGE_CONNECTION_STRING
+)
 
 
 def download_file(url, filename):
+    """
+    Downloads a file from a URL.
+
+    Arguments
+    ---------
+    url : str
+        The URL to download the file from.
+    filename : str
+        The name of the file to save the downloaded content to.
+
+    Returns
+    -------
+    bool
+        True if the download was successful, False otherwise.
+
+    """
+    filepath = os.path.join(TEMP_DIR, filename)
     response = requests.get(url, stream=True)
     if response.status_code == 200:
-        with open(filename, "wb") as f:
+        with open(filepath, "wb") as f:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
@@ -33,27 +73,42 @@ def download_file(url, filename):
         return False
 
 
-def upload_to_blob(file_path, blob_name):
-    try:
-        blob_service_client = BlobServiceClient.from_connection_string(
-            STORAGE_CONNECTION_STRING
-        )
-        blob_client = blob_service_client.get_blob_client(
-            container=BLOB_CONTAINER_NAME, blob=blob_name
-        )
+def upload_file_to_blob(filename):
+    """
+    Uploads a file to Azure Blob Storage.
 
-        with open(file_path, "rb") as data:
+    Arguments
+    ---------
+    file_path : str
+        The local path to the file to upload.
+    filename : str
+        The name of the blob to create in the container.
+
+    Returns
+    -------
+    None
+
+    """
+    try:
+        blob_client = BLOB_SERVICE_CLIENT.get_blob_client(
+            container=BLOB_CONTAINER_NAME, blob=filename
+        )
+        filepath = os.path.join(TEMP_DIR, filename)
+
+        with open(filepath, "rb") as data:
             blob_client.upload_blob(data, overwrite=True)
 
-        logging.info(f"Uploaded {blob_name} to blob storage.")
+        logging.info(f"Uploaded {filename} to blob storage.")
     except Exception as e:
-        logging.error(f"Failed to upload {blob_name} to blob storage. Error: {e}")
+        logging.error(f"Failed to upload {filename} to blob storage. Error: {e}")
 
 
+@app.function_name("streaming_gdelt")
 @app.schedule(
-    schedule="0 0 3,9,15,21 * * *",
+    # schedule="0 0 3,9,15,21 * * *",
+    schedule="0 */1 * * * *",
     arg_name="streamingcron",
-    run_on_startup=True,
+    run_on_startup=False,  # Always False in production. True for testing only.
     use_monitor=False,
 )
 def streaming_gdelt(streamingcron) -> None:
@@ -61,25 +116,20 @@ def streaming_gdelt(streamingcron) -> None:
         "Azure Function triggered to fetch GDELT events and upload to blob storage."
     )
 
-    # Calculate the last 3 days
-    today = datetime.datetime.now(tz=datetime.timezone.utc)
-    dates = [
-        (today - datetime.timedelta(days=i)).strftime("%Y%m%d") for i in range(1, 4)
-    ]
+    today = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
+    date = today.strftime("%Y%m%d")
+    # Construct file name and URL for the GDELT file
+    file_name = f"{date}.export.CSV.zip"
+    file_url = f"{BASE_URL}/{file_name}"
 
-    for date in dates:
-        # Construct file name and URL for the GDELT file
-        file_name = f"{date}.export.CSV.zip"
-        file_url = f"{BASE_URL}/{file_name}"
+    # Download the file
+    try:
+        if download_file(file_url, file_name):
+            # Upload the file to Azure Blob Storage
+            upload_file_to_blob(file_name)
 
-        # Download the file
-        try:
-            if download_file(file_url, file_name):
-                # Upload the file to Azure Blob Storage
-                upload_to_blob(file_name, file_name)
-
-                # Clean up the local file after upload
-                os.remove(file_name)
-        except Exception as e:
-            logging.error(f"Failed to process {file_name}.")
-            logging.error(f"Error: {e}")
+            # Clean up the local file after upload
+            os.remove(os.path.join(TEMP_DIR, file_name))
+    except Exception as e:
+        logging.error(f"Failed to process {file_name}.")
+        logging.error(f"Error: {e}")
