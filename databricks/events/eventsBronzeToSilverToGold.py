@@ -30,6 +30,12 @@ eventsDAGASilver1.write.format("delta").mode("overwrite").option("mergeSchema", 
 
 # COMMAND ----------
 
+# filtered by columns
+delta_path = "/mnt/silver/eventsDAGASilver1"
+spark.read.format("delta").load(delta_path).show()
+
+# COMMAND ----------
+
 from pyspark.sql import functions as F
 
 # Group the DataFrame by 'group_column'
