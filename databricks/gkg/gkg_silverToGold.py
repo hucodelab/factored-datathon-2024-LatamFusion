@@ -23,16 +23,17 @@ df = spark.read.csv(file_path, sep="\t", header=True)
 
 df = df.withColumn("date0", to_date("DATE", "yyyyMMdd"))
 df = df.select("date0", "THEMES", "LOCATIONS", "TONE", "CAMEOEVENTIDS")
-# df = df.dropna(subset=["date0", "THEMES", "TONE"])
 df = df.withColumn("THEMES_ARRAY", split(df["THEMES"], ";"))
 df = df.withColumn("LOCATIONS_ARRAY", split(df["LOCATIONS"], "#"))
 df = df.withColumn("CAMEOEVENTIDS_ARRAY", split(df["CAMEOEVENTIDS"], ","))
 df = df.withColumn("countryCode", col("LOCATIONS_ARRAY").getItem(2))
-
-# COMMAND ----------
-
-df = df.withColumn("countryCode", col("LOCATIONS_ARRAY").getItem(2))
+df = df.withColumn("TONE_ARRAY", split(df["TONE"], ","))
+df = df.withColumn("TONE_AVG", col("TONE_ARRAY").getItem(0))
 
 # COMMAND ----------
 
 df_reduced = df.filter(col("date0") > "2023-08-01")
+
+# COMMAND ----------
+
+

@@ -171,6 +171,10 @@ df.head()
 
 # COMMAND ----------
 
+len(df)
+
+# COMMAND ----------
+
 
 df_clusters = pd.DataFrame({'THEMES_EXPLODED': themes_list, 'Cluster': clusters})
 
@@ -183,6 +187,16 @@ themes['Cluster_Name'] = themes['THEMES_EXPLODED'].map(themes_mapping)
 print(themes.head())
 
 
+
+# COMMAND ----------
+
+df_clusters = pd.DataFrame({'THEMES_EXPLODED': themes_list, 'Cluster_Name': df['Cluster_Name']})
+
+# Convertir el DataFrame en un diccionario
+themes_mapping = df_clusters.set_index('THEMES_EXPLODED')['Cluster_Name'].to_dict()
+
+# Imprimir el diccionario
+print(themes_mapping)
 
 # COMMAND ----------
 
@@ -289,6 +303,17 @@ def visualize_clusters(vectors, clusters):
     plt.legend(title='Cluster')
     plt.show()
 
+def get_themes_mapping(themes_list, cluster_names):
+    # Crear un DataFrame con las columnas 'THEMES_EXPLODED' y 'Cluster_Name'
+    df_clusters = pd.DataFrame({'THEMES_EXPLODED': themes_list, 'Cluster_Name': cluster_names})
+    
+    # Convertir el DataFrame en un diccionario
+    themes_mapping = df_clusters.set_index('THEMES_EXPLODED')['Cluster_Name'].to_dict()
+    
+    return themes_mapping
+
+
+
 def main():
     install_dependencies()
 
@@ -323,62 +348,21 @@ def main():
     
     print(themes.head())
 
+    themes_mapping = get_themes_mapping(themes_list, df['Cluster_Name'])
 
+    print(themes_mapping)
+
+
+
+# COMMAND ----------
+
+spark_themes = spark.createDataFrame(themes)
+
+# COMMAND ----------
+
+dbfs_path_delta = "/mnt/silver/themesMappedSilver"
+spark_themes.write.format("delta").mode("overwrite").save(dbfs_path_delta)
 
 # COMMAND ----------
 
 main()
-
-# COMMAND ----------
-
-# MAGIC %md ## Nuevo Codigo
-# MAGIC
-
-# COMMAND ----------
-
-# HERE IS READING FROM READING FROM STORAGE ACCOUNT
-storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
-storage_account_name = "factoredatathon2024"
-container_name = "gold"
-
-spark.conf.set(
-    f"fs.azure.account.key.{storage_account_name}.blob.core.windows.net",
-    f"{storage_account_key}"
-)
-
-file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/gkg/themesSortedGold.csv"
-df = spark.read.format("csv").option("header", "true").load(file_path)
-df = df.dropna(subset=["THEMES_EXPLODED"])
-
-# COMMAND ----------
-
-### HERE YOU CAN READ FROM AZURE SQL
-# Define the JDBC URL
-jdbc_hostname = "factoredata2024.database.windows.net"
-jdbc_port = 1433
-jdbc_database = "dactoredata2024"
-jdbc_url = f"jdbc:sqlserver://{jdbc_hostname}:{jdbc_port};database={jdbc_database}"
-
-# Define the connection properties
-connection_properties = {
-    "user": "factoredata2024admin",
-    "password": "mdjdmliipo3^%^$5mkkm63",
-    "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-}
-
-# Define your SQL query
-#sql_query = "(SELECT THEMES_EXPLODED, count FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '' AND count > 100) AS tmp"
-sql_query = """
-(SELECT 
-    THEMES_EXPLODED, 
-    count,
-    LOCATIONS,
-    SUBSTRING(LOCATIONS, 
-              CHARINDEX('#', LOCATIONS, CHARINDEX('#', LOCATIONS) + 1) + 1, 
-              2) AS country_code
-FROM [gkg]
-WHERE THEMES_EXPLODED != '') AS tmp
-"""
-
-# Load data from Azure SQL Database into a DataFrame
-df = spark.read.jdbc(url=jdbc_url, table=sql_query, properties=connection_properties)
