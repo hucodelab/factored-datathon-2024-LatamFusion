@@ -4,6 +4,8 @@ on:
     push:
         branches:
             - first_implementation_cicd
+        paths:
+            - "web_solution/**"
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
