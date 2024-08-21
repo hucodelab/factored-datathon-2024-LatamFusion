@@ -59,13 +59,8 @@ connection_properties = {
     "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 }
 
-# Define your SQL query
-<<<<<<< HEAD
-#sql_query = "(SELECT THEMES_EXPLODED, count FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '' AND count > 100) AS tmp"
+# Define SQL query
 sql_query = "(SELECT THEMES_EXPLODED, count FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '') AS tmp"
-=======
-sql_query = "(SELECT THEMES_EXPLODED FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '' and count > 100) AS tmp"
->>>>>>> origin/hugo_dev2
 
 # Load data from Azure SQL Database into a DataFrame
 df = spark.read.jdbc(url=jdbc_url, table=sql_query, properties=connection_properties)
