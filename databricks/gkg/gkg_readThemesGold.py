@@ -211,7 +211,6 @@ from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import seaborn as sns
-import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
@@ -224,6 +223,18 @@ def install_dependencies():
     %pip install nltk
     %pip install gensim
     import nltk
+    import numpy as np
+    import pandas as pd
+    from sklearn.cluster import KMeans
+    from sklearn.manifold import TSNE
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from nltk.corpus import stopwords
+    from nltk.tokenize import word_tokenize
+    from nltk.stem import PorterStemmer
+    from gensim.models import Word2Vec
+    from collections import Counter
+
     nltk.download('punkt')
     nltk.download('stopwords')
 
@@ -312,8 +323,6 @@ def get_themes_mapping(themes_list, cluster_names):
     
     return themes_mapping
 
-
-
 def main():
     install_dependencies()
 
@@ -356,13 +365,10 @@ def main():
 
 # COMMAND ----------
 
-spark_themes = spark.createDataFrame(themes)
+main()
 
 # COMMAND ----------
 
+spark_themes = spark.createDataFrame(themes)
 dbfs_path_delta = "/mnt/silver/themesMappedSilver"
 spark_themes.write.format("delta").mode("overwrite").save(dbfs_path_delta)
-
-# COMMAND ----------
-
-main()
