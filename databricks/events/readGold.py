@@ -194,18 +194,25 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-
-# 1. Función para la conexión con Azure y Spark
+# 1. Función para la conexión con Azure y Spark (ajustada)
 def load_data_from_azure(storage_account_name, container_name, file_name, spark):
     file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/{file_name}"
     df = spark.read.format("csv").option("header", "false").load(file_path)
+    
+    # Mostrar las primeras filas para ver los nombres de las columnas
+    df.show(5)
     return df
 
-# 2. Función para preparar y filtrar los eventos por país
+# 2. Función para preparar y filtrar los eventos por país (ajustada)
 def filter_and_prepare_events(events, country_selected):
-    column_names = ["DATE", "Country", "GoldsteinScaleWA", "ToneWA"]
+    # Renombrar columnas basadas en la inspección visual del DataFrame
+    column_names = ["DATE", "Country", "GoldsteinScaleWA", "ToneWA"]  # Asegúrate de que estos nombres coincidan con los datos
     events = events.toDF(*column_names).toPandas()
-    
+
+    if 'Country' not in events.columns:
+        print("Error: La columna 'Country' no se encontró en el DataFrame después de renombrar las columnas.")
+        return None
+
     # Filtrar por país
     events_filtered = events[events.Country == country_selected].copy()
 
@@ -256,14 +263,18 @@ def feature_engineering(events_filtered):
 
     return events_filtered
 
-# 4. Función para entrenar y evaluar el modelo
-def train_and_evaluate_model(events_filtered):
+# 4. Función para entrenar y evaluar el modelo (ajustada para manejar casos con pocas muestras)
+def train_model_and_get_predictions(events_filtered):
     X = events_filtered[['day_sin', 'day_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos', 
                          'year_sin', 'year_cos', 'day_of_week_sin', 'day_of_week_cos', 
                          'GoldsteinScaleWA_lag1', 'GoldsteinScaleWA_lag7', 'GoldsteinScaleWA_lag30', 
                          'ToneWA_lag1', 'GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
 
     y = events_filtered['GoldsteinScaleWA']
+
+    if len(X) < 2:
+        print("Error: No hay suficientes muestras para entrenar el modelo para este país.")
+        return None, None, None, None, None, None
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
@@ -276,70 +287,82 @@ def train_and_evaluate_model(events_filtered):
     )
 
     best_rf.fit(X_train, y_train)
-    y_pred = best_rf.predict(X_test)
+    y_pred_train = best_rf.predict(X_train)
+    y_pred_test = best_rf.predict(X_test)
 
-    # Evaluar el modelo
-    mse = mean_squared_error(y_test, y_pred)
-    rmse = mean_squared_error(y_test, y_pred, squared=False)
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+    return X_train.index, X_test.index, y_pred_train, y_pred_test, y_train, y_test
 
-    print(f"Mean Squared Error (MSE): {mse}")
-    print(f"Root Mean Squared Error (RMSE): {rmse}")
-    print(f"Mean Absolute Error (MAE): {mae}")
-    print(f"R^2 Score: {r2}")
+# 5. Función para guardar los resultados en un CSV (ajustada para incluir y_train y y_test)
+def save_results_to_csv(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file):
+    # Crear DataFrame para train
+    results_train = pd.DataFrame({
+        'fecha': train_dates,
+        'pais': country,
+        'y_pred': y_pred_train,
+        'y_real': y_train
+    })
 
-    return y_train, y_test, y_pred
+    # Crear DataFrame para test
+    results_test = pd.DataFrame({
+        'fecha': test_dates,
+        'pais': country,
+        'y_pred': y_pred_test,
+        'y_real': y_test
+    })
 
-# 5. Función para graficar los resultados
-def plot_results(y_train, y_test, y_pred):
-    plt.figure(figsize=(14, 7))
+    # Concatenar ambos resultados
+    results = pd.concat([results_train, results_test])
 
-    # Graficar los valores reales de GoldsteinScale en el conjunto de entrenamiento
-    plt.plot(y_train.index, y_train, label='Valor Real - Train Set', color='blue')
+    # Guardar en CSV
+    results.to_csv(output_file, mode='a', header=not pd.io.common.file_exists(output_file), index=False)
 
-    # Graficar las predicciones de GoldsteinScale en el conjunto de prueba
-    plt.plot(y_test.index, y_pred, label='Predicción - Test Set', color='red', linestyle='--')
-
-    # Graficar los valores reales de GoldsteinScale en el conjunto de prueba
-    plt.plot(y_test.index, y_test, label='Valor Real - Test Set', color='green')
-
-    plt.title('Tendencia de GoldsteinScale: Valores Reales (Train), Predicciones (Test) y Valores Reales (Test)')
-    plt.xlabel('Date')
-    plt.ylabel('GoldsteinScale')
-    plt.ylim([-5, 5])
-    plt.xlim([pd.Timestamp('2024-06-01'), pd.Timestamp('2024-08-10')])
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-# Ejecución del pipeline completo
+# 6. Función principal
 def main():
     storage_account_name = "factoredatathon2024"
     container_name = "gold"
     file_name = "weightedAvgGoldsteinToneGold.csv"
+    output_file = "model_predictions.csv"
 
     # Conexión y carga de datos
     df = load_data_from_azure(storage_account_name, container_name, file_name, spark)
     
-    # Preparación y filtrado de eventos
-    country_selected = 'US'
-    events_filtered = filter_and_prepare_events(df, country_selected)
-    
-    # Ingeniería de características
-    events_filtered = feature_engineering(events_filtered)
-    
-    # Entrenamiento y evaluación del modelo
-    y_train, y_test, y_pred = train_and_evaluate_model(events_filtered)
-    
-    # Graficar los resultados
-    plot_results(y_train, y_test, y_pred)
+    # Lista de países
+    countries = df.select('_c1').distinct().rdd.flatMap(lambda x: x).collect()
 
+    for country in countries:
+        print(f"Processing country: {country}")
+        # Preparación y filtrado de eventos
+        events_filtered = filter_and_prepare_events(df, country)
+        
+        if events_filtered is not None and len(events_filtered) > 0:
+            # Ingeniería de características
+            events_filtered = feature_engineering(events_filtered)
+            
+            # Entrenamiento del modelo y obtención de predicciones
+            train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test = train_model_and_get_predictions(events_filtered)
+            
+            if train_dates is not None:
+                # Guardar resultados en CSV
+                save_results_to_csv(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file)
 
+    print(f"Results saved to {output_file}")
+
+# Ejecutar el script
+if __name__ == "__main__":
+    main()
 
 # COMMAND ----------
 
-main()
+import pandas as pd
+
+# Cargar el DataFrame
+model_df = pd.read_csv("model_predictions.csv")
+model_df['fecha'] = pd.to_datetime(model_df['fecha'])
+model_df = model_df.sort_index()
+
+# COMMAND ----------
+
+model_df.info()
 
 # COMMAND ----------
 

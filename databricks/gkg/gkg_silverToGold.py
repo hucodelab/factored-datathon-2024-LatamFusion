@@ -107,3 +107,7 @@ df_result.write.format("delta").mode("overwrite").save(output_path)
 # COMMAND ----------
 
 # df_result.limit(5).show(truncate=False)
+
+# COMMAND ----------
+
+
