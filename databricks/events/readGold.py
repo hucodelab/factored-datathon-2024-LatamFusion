@@ -56,7 +56,7 @@ events = df.toPandas()
 # COMMAND ----------
 
 # Country select
-country_selected = 'US'  # Reemplaza 'CH' con el nombre del país que deseas filtrar
+country_selected = 'AR'  # Reemplaza 'CH' con el nombre del país que deseas filtrar
 events_filtered = events[events.Country == country_selected].copy()
 
 # DATE to index
@@ -67,6 +67,10 @@ events_filtered.sort_index(ascending=True, inplace=True)
 # Cast object to float
 events_filtered['GoldsteinScaleWA'] = events_filtered['GoldsteinScaleWA'].astype(float)
 events_filtered['ToneWA'] = events_filtered['ToneWA'].astype(float)
+
+# COMMAND ----------
+
+events_filtered
 
 # COMMAND ----------
 
@@ -334,6 +338,8 @@ def main():
     
     # Graficar los resultados
     plot_results(y_train, y_test, y_pred)
+
+    print()
 
 
 
