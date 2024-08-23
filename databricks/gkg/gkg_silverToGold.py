@@ -1,5 +1,5 @@
 # Databricks notebook source
-from pyspark.sql.functions import to_date, col, split, explode, to_date, array_contains, lit, when, count, collect_list
+from pyspark.sql.functions import to_date, col, split, explode, to_date, array_contains, lit, when, count, collect_list, broadcast
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 import uuid
@@ -39,6 +39,19 @@ uuid_udf = udf(generate_uuid, StringType())
 
 # Add UUID column to DataFrame
 df_reduced = df_reduced.withColumn("uuid", uuid_udf())
+
+# COMMAND ----------
+
+count_df = df_reduced.groupBy("countryCode").count().orderBy("count", ascending=False).limit(50)
+
+# COMMAND ----------
+
+# Collect the column from the smaller DataFrame as a list
+filter_values = count_df.select('countryCode').rdd.flatMap(lambda x: x).collect()
+
+# Filter the large DataFrame using the collected list
+df_reduced = df_reduced \
+    .filter(df_reduced['countryCode'].isin(filter_values))
 
 # COMMAND ----------
 
@@ -107,7 +120,3 @@ df_result.write.format("delta").mode("overwrite").save(output_path)
 # COMMAND ----------
 
 # df_result.limit(5).show(truncate=False)
-
-# COMMAND ----------
-
-
