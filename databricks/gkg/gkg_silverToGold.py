@@ -27,8 +27,10 @@ df = df.withColumn("CAMEOEVENTIDS_ARRAY", split(df["CAMEOEVENTIDS"], ","))
 df = df.withColumn("countryCode", col("LOCATIONS_ARRAY").getItem(2))
 df = df.withColumn("TONE_ARRAY", split(df["TONE"], ","))
 df = df.withColumn("TONE_AVG", col("TONE_ARRAY").getItem(0))
+df = df.withColumn("POLARITY", col("TONE_ARRAY").getItem(3).cast("float"))
 
-df_reduced = df.filter(col("date0") > "2023-08-01")
+#Filter by date and polarity to avoid highly polarized news:
+df_reduced = df.filter((col("date0") > "2023-08-01") & (col("POLARITY") < 50))
 
 # Define a function to generate UUIDs
 def generate_uuid():
@@ -65,7 +67,8 @@ df_with_topics = df_exploded.join(labels, df_exploded["THEMES_EXPLODED2"] == lab
                                         'CAMEOEVENTIDS_ARRAY',
                                         'countryCode',
                                         'TONE_ARRAY',
-                                        'TONE_AVG', 
+                                        'TONE_AVG',
+                                        'POLARITY',  
                                         "THEMES_EXPLODED", 
                                         "Cluster_Name"
                                     )
