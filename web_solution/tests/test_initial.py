@@ -15,7 +15,3 @@ def test_string_length():
 def test_list_contains_value():
     sample_list = [1, 2, 3, 4, 5]
     assert 3 in sample_list
-
-
-def test_that_fails():
-    assert 1 == 2
