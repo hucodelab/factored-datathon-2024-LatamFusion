@@ -1,9 +1,4 @@
 # Databricks notebook source
-# %pip install sqlalchemy pyodbc pymssql
-# dbutils.library.restartPython()
-
-# COMMAND ----------
-
 # MAGIC %md #Time Series Model
 # MAGIC
 
@@ -33,14 +28,175 @@ df = spark.read.format("csv").option("header", "false").load(file_path)
 
 # COMMAND ----------
 
+# MAGIC %pip install xgboost
+# MAGIC      
+# MAGIC from sklearn.model_selection import train_test_split
+# MAGIC from sklearn.ensemble import RandomForestRegressor
+# MAGIC from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+# MAGIC import numpy as np
+# MAGIC import pandas as pd
+# MAGIC import matplotlib.pyplot as plt
+# MAGIC import xgboost as xgb
+# MAGIC from sklearn.model_selection import GridSearchCV
+# MAGIC from statsmodels.tsa.arima.model import ARIMA
+# MAGIC
+# MAGIC
+
+# COMMAND ----------
+
+column_names = ["DATE", "Country", "GoldsteinScaleWA","ToneWA"]
+df = df.toDF(*column_names)
+events = df.toPandas()
+
+# COMMAND ----------
+
+# MAGIC %md ### Country Select and Feature Casting
+# MAGIC     
+
+# COMMAND ----------
+
+# Country select
+country_selected = 'AR'  # Reemplaza 'CH' con el nombre del país que deseas filtrar
+events_filtered = events[events.Country == country_selected].copy()
+
+# DATE to index
+events_filtered['DATE'] = pd.to_datetime(events_filtered['DATE'])
+events_filtered.set_index('DATE', inplace=True)
+events_filtered.sort_index(ascending=True, inplace=True)
+
+# Cast object to float
+events_filtered['GoldsteinScaleWA'] = events_filtered['GoldsteinScaleWA'].astype(float)
+events_filtered['ToneWA'] = events_filtered['ToneWA'].astype(float)
+
+# COMMAND ----------
+
+events_filtered
+
+# COMMAND ----------
+
+# MAGIC %md ### Feature Engineering
+# MAGIC
+
+# COMMAND ----------
+
+# Feature Engineering
+
+events_filtered['day'] = events_filtered.index.day
+events_filtered['week'] = events_filtered.index.week
+events_filtered['month'] = events_filtered.index.month
+events_filtered['year'] = events_filtered.index.year
+events_filtered['day_of_week'] = events_filtered.index.dayofweek
+
+# Cyclical features
+events_filtered['day_sin'] = np.sin(2 * np.pi * events_filtered['day'] / 31)
+events_filtered['day_cos'] = np.cos(2 * np.pi * events_filtered['day'] / 31)
+events_filtered['week_sin'] = np.sin(2 * np.pi * events_filtered['week'] / 52)
+events_filtered['week_cos'] = np.cos(2 * np.pi * events_filtered['week'] / 52)
+events_filtered['month_sin'] = np.sin(2 * np.pi * events_filtered['month'] / 12)
+events_filtered['month_cos'] = np.cos(2 * np.pi * events_filtered['month'] / 12)
+cycle_length = 10
+events_filtered['year_sin'] = np.sin(2 * np.pi * events_filtered['year'] / cycle_length)
+events_filtered['year_cos'] = np.cos(2 * np.pi * events_filtered['year'] / cycle_length)
+events_filtered['day_of_week_sin'] = np.sin(2 * np.pi * events_filtered['day_of_week'] / 7)
+events_filtered['day_of_week_cos'] = np.cos(2 * np.pi * events_filtered['day_of_week'] / 7)
+
+# features lag
+events_filtered['GoldsteinScaleWA_lag1'] = events_filtered['GoldsteinScaleWA'].shift(1)
+events_filtered['GoldsteinScaleWA_lag7'] = events_filtered['GoldsteinScaleWA'].shift(7)
+events_filtered['GoldsteinScaleWA_lag30'] = events_filtered['GoldsteinScaleWA'].shift(30)
+events_filtered['ToneWA_lag1'] = events_filtered['ToneWA'].shift(1)
+
+# features movil windows
+events_filtered['GoldsteinScaleWA_roll7'] = events_filtered['GoldsteinScaleWA'].rolling(window=7).mean()
+events_filtered['ToneWA_roll7'] = events_filtered['ToneWA'].rolling(window=7).mean()
+
+events_filtered.dropna(inplace=True)
+
+# COMMAND ----------
+
+# MAGIC %md ### Split & Train with best params
+# MAGIC
+
+# COMMAND ----------
+
+X = events_filtered[['day_sin', 'day_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos', 
+                     'year_sin', 'year_cos', 'day_of_week_sin', 'day_of_week_cos', 
+                     'GoldsteinScaleWA_lag1', 'GoldsteinScaleWA_lag7', 'GoldsteinScaleWA_lag30', 
+                     'ToneWA_lag1', 'GoldsteinScaleWA_roll7', 'ToneWA_roll7']]
+
+y = events_filtered['GoldsteinScaleWA']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
+
+best_rf = RandomForestRegressor(
+    max_depth=4, 
+    max_features=1.0, 
+    min_samples_leaf=6,
+    min_samples_split=30, 
+    n_estimators=200
+)
+
+best_rf.fit(X_train, y_train)
+
+# Hacer predicciones
+predictions = best_rf.predict(X_test)
+
+
+# COMMAND ----------
+
+# MAGIC %md ### Predict & Plot
+# MAGIC
+
+# COMMAND ----------
+
+# Realizar predicciones
+y_pred = best_rf.predict(X_test)
+
+# Evaluar el modelo
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Squared Error con los mejores parámetros: {mse}")
+
+rmse = mean_squared_error(y_test, y_pred, squared=False)  # squared=False para obtener la raíz cuadrada
+print(f"Root Mean Squared Error (RMSE): {rmse}")
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Mean Absolute Error (MAE): {mae}")
+r2 = r2_score(y_test, y_pred)
+print(f"R^2 Score (R-squared): {r2}")
+
+# Crear la gráfica combinada
+plt.figure(figsize=(14, 7))
+
+# Graficar los valores reales de GoldsteinScale en el conjunto de entrenamiento
+plt.plot(y_train.index, y_train, label='Valor Real - Train Set', color='blue')
+
+# Graficar las predicciones de GoldsteinScale en el conjunto de prueba
+plt.plot(y_test.index, y_test_pred, label='Predicción - Test Set', color='red', linestyle='--')
+
+# Graficar los valores reales de GoldsteinScale en el conjunto de prueba
+plt.plot(y_test.index, y_test, label='Valor Real - Test Set', color='green')
+
+# Configuraciones de la gráfica
+plt.title('Tendencia de GoldsteinScale: Valores Reales (Train), Predicciones (Test) y Valores Reales (Test)')
+plt.xlabel('Date')
+plt.ylabel('GoldsteinScale')
+plt.ylim([-5, 5])
+plt.xlim([pd.Timestamp('2024-06-01'), pd.Timestamp('2024-08-10')]) 
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sqlalchemy import create_engine
-df_combined = pd.DataFrame()
 
 # 1. Función para la conexión con Azure y Spark (ajustada)
 def load_data_from_azure(storage_account_name, container_name, file_name, spark):
@@ -140,9 +296,8 @@ def train_model_and_get_predictions(events_filtered):
 
     return X_train.index, X_test.index, y_pred_train, y_pred_test, y_train, y_test
 
-
 # 5. Función para guardar los resultados en un CSV (ajustada para incluir y_train y y_test)
-def save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file):
+def save_results_to_csv(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file):
     # Crear DataFrame para train
     results_train = pd.DataFrame({
         'fecha': train_dates,
@@ -162,32 +317,8 @@ def save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_tr
     # Concatenar ambos resultados
     results = pd.concat([results_train, results_test])
 
-    global df_combined
-
-    df_combined = pd.concat([df_combined, results])
-    # Write as SQL table
-
-    jdbc_hostname = "factoredata2024.database.windows.net"
-    jdbc_port = 1433
-    jdbc_database = "dactoredata2024"
-    jdbc_url = f"jdbc:sqlserver://{jdbc_hostname}:{jdbc_port};database={jdbc_database}"
-
-    # Define the connection properties
-    connection_properties = {
-        "user": "factoredata2024admin",
-        "password": "mdjdmliipo3^%^$5mkkm63",
-        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    }
-
-    # Write the DataFrame to SQL Server
-    spark_result = spark.createDataFrame(df_combined)
-
-    # Define the target table name
-    table_name = "events.goldsteinPredictionsGold"
-
-    # Write the Spark DataFrame to Azure SQL Database
-    spark_result.write \
-        .jdbc(url=jdbc_url, table=table_name, mode='overwrite', properties=connection_properties)
+    # Guardar en CSV
+    results.to_csv(output_file, mode='a', header=not pd.io.common.file_exists(output_file), index=False)
 
 # 6. Función principal
 def main():
@@ -197,11 +328,11 @@ def main():
     output_file = "model_predictions.csv"
 
     # Conexión y carga de datos
-    
     df = load_data_from_azure(storage_account_name, container_name, file_name, spark)
     
     # Lista de países
     countries = df.select('_c1').distinct().rdd.flatMap(lambda x: x).collect()
+
 
     for country in countries:
         print(f"Processing country: {country}")
@@ -217,11 +348,28 @@ def main():
             
             if train_dates is not None:
                 # Guardar resultados en CSV
+                save_results_to_csv(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file)
 
-                save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file)
 
     print(f"Results saved to {output_file}")
 
 # Ejecutar el script
 if __name__ == "__main__":
     main()
+
+# COMMAND ----------
+
+import pandas as pd
+
+# Cargar el DataFrame
+model_df = pd.read_csv("model_predictions.csv")
+model_df['fecha'] = pd.to_datetime(model_df['fecha'])
+model_df = model_df.sort_index()
+
+# COMMAND ----------
+
+len(model_df["pais"].unique())
+
+# COMMAND ----------
+
+
