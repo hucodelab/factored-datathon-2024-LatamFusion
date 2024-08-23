@@ -368,7 +368,7 @@ model_df = model_df.sort_index()
 
 # COMMAND ----------
 
-model_df.info()
+len(model_df["pais"].unique())
 
 # COMMAND ----------
 
