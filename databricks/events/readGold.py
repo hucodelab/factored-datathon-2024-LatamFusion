@@ -187,7 +187,11 @@ plt.show()
 
 # COMMAND ----------
 
+# MAGIC %pip install sqlalchemy
 
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
@@ -197,6 +201,9 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+from sqlalchemy import create_engine
+df_combined = pd.DataFrame()
 
 # 1. Función para la conexión con Azure y Spark (ajustada)
 def load_data_from_azure(storage_account_name, container_name, file_name, spark):
@@ -296,8 +303,8 @@ def train_model_and_get_predictions(events_filtered):
 
     return X_train.index, X_test.index, y_pred_train, y_pred_test, y_train, y_test
 
-# 5. Función para guardar los resultados en un CSV (ajustada para incluir y_train y y_test)
-def save_results_to_csv(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file):
+# 5. Función para guardar los resultados en SQL (ajustada para incluir y_train y y_test)
+def save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file):
     # Crear DataFrame para train
     results_train = pd.DataFrame({
         'fecha': train_dates,
@@ -317,8 +324,33 @@ def save_results_to_csv(train_dates, test_dates, y_pred_train, y_pred_test, y_tr
     # Concatenar ambos resultados
     results = pd.concat([results_train, results_test])
 
-    # Guardar en CSV
-    results.to_csv(output_file, mode='a', header=not pd.io.common.file_exists(output_file), index=False)
+    global df_combined
+
+    df_combined = pd.concat([df_combined, results])
+    # Write as SQL table
+
+    jdbc_hostname = "factoredata2024.database.windows.net"
+    jdbc_port = 1433
+    jdbc_database = "dactoredata2024"
+    jdbc_url = f"jdbc:sqlserver://{jdbc_hostname}:{jdbc_port};database={jdbc_database}"
+
+    # Define the connection properties
+    connection_properties = {
+        "user": "factoredata2024admin",
+        "password": "mdjdmliipo3^%^$5mkkm63",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    }
+
+    # Write the DataFrame to SQL Server
+    spark_result = spark.createDataFrame(df_combined)
+
+    # Define the target table name
+    table_name = "events.goldsteinPredictionsGold"
+
+    # Write the Spark DataFrame to Azure SQL Database
+    spark_result.write \
+        .jdbc(url=jdbc_url, table=table_name, mode='overwrite', properties=connection_properties)
+
 
 # 6. Función principal
 def main():
@@ -326,6 +358,18 @@ def main():
     container_name = "gold"
     file_name = "weightedAvgGoldsteinToneGold.csv"
     output_file = "model_predictions.csv"
+
+    storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+    storage_account_name = "factoredatathon2024"
+    container_name = "gold"
+
+    spark.conf.set(
+        f"fs.azure.account.key.{storage_account_name}.blob.core.windows.net",
+        f"{storage_account_key}"
+    )
+
+    file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/weightedAvgGoldsteinToneGold.csv"
+    df = spark.read.format("csv").option("header", "false").load(file_path)
 
     # Conexión y carga de datos
     df = load_data_from_azure(storage_account_name, container_name, file_name, spark)
@@ -347,28 +391,13 @@ def main():
             train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test = train_model_and_get_predictions(events_filtered)
             
             if train_dates is not None:
-                # Guardar resultados en CSV
-                save_results_to_csv(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file)
+                # Guardar resultados en SQL
+                save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file)
 
-
-    print(f"Results saved to {output_file}")
 
 # Ejecutar el script
 if __name__ == "__main__":
     main()
-
-# COMMAND ----------
-
-import pandas as pd
-
-# Cargar el DataFrame
-model_df = pd.read_csv("model_predictions.csv")
-model_df['fecha'] = pd.to_datetime(model_df['fecha'])
-model_df = model_df.sort_index()
-
-# COMMAND ----------
-
-len(model_df["pais"].unique())
 
 # COMMAND ----------
 

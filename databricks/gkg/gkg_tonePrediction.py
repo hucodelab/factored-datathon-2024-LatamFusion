@@ -127,6 +127,10 @@ df.columns
 
 # COMMAND ----------
 
+# MAGIC %pip install sqlalchemy
+
+# COMMAND ----------
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
@@ -134,6 +138,8 @@ from pyspark.sql.functions import col, to_date, dayofmonth, weekofyear, month, y
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.regression import RandomForestRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
+from sqlalchemy import create_engine
+
 
 # 1. Función para la conexión con Azure y Spark
 def load_data_from_azure(storage_account_name, storage_account_key, container_name, spark):
@@ -245,6 +251,7 @@ def train_model_and_get_predictions(events_filtered):
     return predictions_train, predictions_test, rmse_train, rmse_test
 
 # 5. Función para guardar los resultados en un CSV
+"""
 def save_results_to_csv(predictions_train, predictions_test, output_file):
     train_results = predictions_train.select(col("DATE"), col("Country"), col("prediction").alias("y_pred"), col("TONE_AVG_ECONOMIC").alias("y_real"))
     test_results = predictions_test.select(col("DATE"), col("Country"), col("prediction").alias("y_pred"), col("TONE_AVG_ECONOMIC").alias("y_real"))
@@ -252,6 +259,33 @@ def save_results_to_csv(predictions_train, predictions_test, output_file):
     results = train_results.union(test_results)
 
     results.write.mode("append").option("header", "true").csv(output_file)
+"""
+
+
+def save_results_to_sql(predictions_train, predictions_test, jdbc_url, table_name, connection_properties):
+    from pyspark.sql import DataFrame
+    from pyspark.sql.functions import col
+
+    # Selecciona las columnas necesarias de los conjuntos de datos de entrenamiento y prueba
+    train_results = predictions_train.select(
+        col("DATE"),
+        col("Country"),
+        col("prediction").alias("y_pred"),
+        col("TONE_AVG_ECONOMIC").alias("y_real")
+    )
+    test_results = predictions_test.select(
+        col("DATE"),
+        col("Country"),
+        col("prediction").alias("y_pred"),
+        col("TONE_AVG_ECONOMIC").alias("y_real")
+    )
+
+    # Combina los resultados de entrenamiento y prueba
+    results = train_results.union(test_results)
+
+    # Guarda los resultados en la base de datos SQL
+    results.write.mode("append") \
+        .jdbc(url=jdbc_url, table=table_name, properties=connection_properties)
 
 # 6. Función principal
 def main():
@@ -264,6 +298,23 @@ def main():
 
     df = load_data_from_azure(storage_account_name, storage_account_key, container_name, spark)
     
+    
+    jdbc_hostname = "factoredata2024.database.windows.net"
+    jdbc_port = 1433
+    jdbc_database = "dactoredata2024"
+    jdbc_url = f"jdbc:sqlserver://{jdbc_hostname}:{jdbc_port};database={jdbc_database}"
+
+    # Define the connection properties
+    connection_properties = {
+        "user": "factoredata2024admin",
+        "password": "mdjdmliipo3^%^$5mkkm63",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    }
+
+    # Define the target table name
+    table_name = "gkg.tonePredictionsGold"
+
+
     if df is None:
         raise Exception("DataFrame is None. Exiting the process.")
     
@@ -283,7 +334,7 @@ def main():
 
             print(f"RMSE Train: {rmse_train}, RMSE Test: {rmse_test}")
 
-            save_results_to_csv(predictions_train, predictions_test, output_file)
+            save_results_to_sql(predictions_train, predictions_test, jdbc_url, table_name, connection_properties)
         else:
             print(f"Not enough data for country {country}. Skipping...")
 
