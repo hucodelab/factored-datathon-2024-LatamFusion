@@ -3,8 +3,6 @@ run-name: Running CI/CD for our web application 🚀
 
 on:
     push:
-        branches:
-            - first_implementation_cicd
         tags:
             - "web_solution-v*"
 
