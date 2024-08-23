@@ -337,29 +337,369 @@ generate_alerts(df, "BR")
 
 # COMMAND ----------
 
-import pandas as pd
+# MAGIC %pip install geopandas
+
+# COMMAND ----------
+
 import geopandas as gpd
+import pandas as pd
 import matplotlib.pyplot as plt
+import requests
+import zipfile
+import io
 
+# Descargar el archivo shapefile ZIP desde el repositorio de geopandas
+url = 'https://github.com/geopandas/geopandas-data/raw/main/naturalearth_lowres.zip'
+response = requests.get(url)
 
-# Cargar un mapa del mundo con códigos FIPS de dos caracteres
-world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+# Descomprimir el archivo ZIP
+with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+    # Extraer todos los archivos
+    z.extractall('naturalearth_lowres')
 
-# Convertir el código ISO de tres caracteres a dos caracteres usando una función de correspondencia
-iso_to_fips = {
-    'USA': 'US', 'CHN': 'CN', 'RUS': 'RU', # Otros países...
+# Ruta al shapefile descargado y extraído
+shapefile_path = 'naturalearth_lowres/ne_110m_admin_0_countries.shp'
+
+# Supongamos que tienes tu DataFrame llamado df
+data = {
+    'codigo_fips': ['LT'],
+    'y_real': [-2.059574]
 }
-world['fips'] = world['iso_a2']  # Usando 'iso_a2' ya que es el código de dos caracteres
 
-# Unir los datos agregados de GoldsteinScale con el mapa
-world = world.merge(df_grouped, on='fips', how='left')
+df = pd.DataFrame(data)
 
-# Crear el mapa de calor basado en la escala de Goldstein
+# Cargar el shapefile del mapa mundial
+world = gpd.read_file(shapefile_path)
+
+# Asegúrate de que el dataset de geopandas tenga una columna para el código de país
+# 'iso_a2' es la columna de códigos ISO de dos letras en este dataset
+# Puedes renombrar la columna si es necesario para coincidir con 'codigo_fips'
+world = world.rename(columns={'iso_a2': 'codigo_fips'})  # Ajusta si el nombre es diferente
+
+# Merge de los datos del DataFrame con el DataFrame del mapa
+world = world.merge(df, on='codigo_fips', how='left')
+
+# Crear el mapa
 fig, ax = plt.subplots(1, 1, figsize=(15, 10))
-world.boundary.plot(ax=ax, linewidth=1)
-world.plot(column='GoldsteinScale', cmap='coolwarm', linewidth=0.8, ax=ax, edgecolor='0.8', legend=True)
+world.boundary.plot(ax=ax)
+world.plot(column='y_real', ax=ax, legend=True,
+           legend_kwds={'label': "Índice y_real",
+                        'orientation': "horizontal"},
+           cmap='coolwarm')
 
-# Agregar título
-plt.title('Mapa de Calor: Escala de Goldstein por País', fontsize=15)
+plt.title('Mapa del Mundo con Índice y_real por País')
 plt.show()
+
+
+# COMMAND ----------
+
+df.head()
+
+# COMMAND ----------
+
+fips_to_iso = {
+    'AF': 'AFG',
+    'AX': '-',
+    'AL': 'ALB',
+    'AG': 'DZA',
+    'AQ': 'ASM',
+    'AN': 'AND',
+    'AO': 'AGO',
+    'AV': 'AIA',
+    'AY': 'ATA',
+    'AC': 'ATG',
+    'AR': 'ARG',
+    'AM': 'ARM',
+    'AA': 'ABW',
+    'AT': 'AUS',
+    'AS': 'AUS',
+    'AU': 'AUT',
+    'AJ': 'AZE',
+    'BF': 'BHS',
+    'BA': 'BHR',
+    'FQ': 'UMI',
+    'BG': 'BGD',
+    'BB': 'BRB',
+    'BS': 'REU',
+    'BO': 'BLR',
+    'BE': 'BEL',
+    'BH': 'BLZ',
+    'BN': 'BEN',
+    'BD': 'BMU',
+    'BT': 'BTN',
+    'BL': 'BOL',
+    'BK': 'BIH',
+    'BC': 'BWA',
+    'BV': 'BVT',
+    'BR': 'BRA',
+    'IO': 'IOT',
+    'BX': 'BRN',
+    'BU': 'BGR',
+    'UV': 'BFA',
+    'BM': 'MMR',
+    'BY': 'BDI',
+    'CB': 'KHM',
+    'CM': 'CMR',
+    'CA': 'CAN',
+    'CV': 'CPV',
+    'CJ': 'CYM',
+    'CT': 'CAF',
+    'CD': 'TCD',
+    'CI': 'CHL',
+    'CH': 'CHN',
+    'KT': 'CXR',
+    'IP': 'CLP',
+    'CK': 'CCK',
+    'CO': 'COL',
+    'CN': 'COM',
+    'CG': 'COD',
+    'CF': 'COG',
+    'CW': 'COK',
+    'CR': 'AUS',
+    'CS': 'CRI',
+    'IV': 'CIV',
+    'HR': 'HRV',
+    'CU': 'CUB',
+    'UC': 'CUW',
+    'CY': 'CYP',
+    'EZ': 'CZE',
+    'DA': 'DNK',
+    'DX': '-',
+    'DJ': 'DJI',
+    'DO': 'DMA',
+    'DR': 'DOM',
+    'EC': 'ECU',
+    'EG': 'EGY',
+    'ES': 'SLV',
+    'EK': 'GNQ',
+    'ER': 'ERI',
+    'EN': 'EST',
+    'ET': 'ETH',
+    'PJ': '-',
+    'EU': 'REU',
+    'FK': 'FLK',
+    'FO': 'FRO',
+    'FJ': 'FJI',
+    'FI': 'FIN',
+    'FR': 'FRA',
+    'FG': 'GUF',
+    'FP': 'PYF',
+    'FS': 'ATF',
+    'GB': 'GAB',
+    'GA': 'GMB',
+    'GZ': 'PSE',
+    'GG': 'GEO',
+    'GM': 'DEU',
+    'GH': 'GHA',
+    'GI': 'GIB',
+    'GO': 'REU',
+    'GR': 'GRC',
+    'GL': 'GRL',
+    'GJ': 'GRD',
+    'GP': 'GLP',
+    'GQ': 'GUM',
+    'GT': 'GTM',
+    'GK': 'GBR',
+    'GV': 'GIN',
+    'PU': 'GNB',
+    'GY': 'GUY',
+    'HA': 'HTI',
+    'HM': 'HMD',
+    'HO': 'HND',
+    'HK': 'HKG',
+    'HQ': 'UMI',
+    'HU': 'HUN',
+    'IC': 'ISL',
+    'IN': 'IND',
+    'ID': 'IDN',
+    'IR': 'IRN',
+    'IZ': 'IRQ',
+    'EI': 'IRL',
+    'IM': 'GBR',
+    'IS': 'ISR',
+    'IT': 'ITA',
+    'JM': 'JAM',
+    'JN': 'SJM',
+    'JA': 'JPN',
+    'DQ': 'UMI',
+    'JE': 'GBR',
+    'JQ': 'UMI',
+    'JO': 'JOR',
+    'JU': 'REU',
+    'KZ': 'KAZ',
+    'KE': 'KEN',
+    'KQ': 'UMI',
+    'KR': 'KIR',
+    'KN': 'PRK',
+    'KS': 'KOR',
+    'KV': '-',
+    'KU': 'KWT',
+    'KG': 'KGZ',
+    'LA': 'LAO',
+    'LG': 'LVA',
+    'LE': 'LBN',
+    'LT': 'LSO',
+    'LI': 'LBR',
+    'LY': 'LBY',
+    'LS': 'LIE',
+    'LH': 'LTU',
+    'LU': 'LUX',
+    'MC': 'MAC',
+    'MK': 'MKD',
+    'MA': 'MDG',
+    'MI': 'MWI',
+    'MY': 'MYS',
+    'MV': 'MDV',
+    'ML': 'MLI',
+    'MT': 'MLT',
+    'RM': 'MHL',
+    'MB': 'MTQ',
+    'MR': 'MRT',
+    'MP': 'MUS',
+    'MF': 'MYT',
+    'MX': 'MEX',
+    'FM': 'FSM',
+    'MQ': 'UMI',
+    'MD': 'MDA',
+    'MN': 'MCO',
+    'MG': 'MNG',
+    'MJ': 'MNE',
+    'MH': 'MSR',
+    'MO': 'MAR',
+    'MZ': 'MOZ',
+    'BM': 'MMR',
+    'WA': 'NAM',
+    'NR': 'NRU',
+    'BQ': 'UMI',
+    'NP': 'NPL',
+    'NL': 'NLD',
+    'NC': 'NCL',
+    'NZ': 'NZL',
+    'NU': 'NIC',
+    'NG': 'NER',
+    'NI': 'NGA',
+    'NE': 'NIU',
+    'NF': 'NFK',
+    'CQ': 'MNP',
+    'NO': 'NOR',
+    'MU': 'OMN',
+    'PK': 'PAK',
+    'PS': 'PLW',
+    'LQ': 'UMI',
+    'PM': 'PAN',
+    'PP': 'PNG',
+    'PF': '-',
+    'PA': 'PRY',
+    'PE': 'PER',
+    'RP': 'PHL',
+    'PC': 'PCN',
+    'PL': 'POL',
+    'PO': 'PRT',
+    'RQ': 'PRI',
+    'QA': 'QAT',
+    'RE': 'REU',
+    'RO': 'ROU',
+    'RS': 'RUS',
+    'RW': 'RWA',
+    'TB': 'BLM',
+    'SH': 'SHN',
+    'SC': 'KNA',
+    'ST': 'LCA',
+    'RN': 'MTQ',
+    'SB': 'SPM',
+    'VC': 'VCT',
+    'WS': 'WSM',
+    'SM': 'SMR',
+    'TP': 'STP',
+    'SA': 'SAU',
+    'SG': 'SEN',
+    'RI': 'SRB',
+    'SE': 'SYC',
+    'SL': 'SLE',
+    'SN': 'SGP',
+    'NN': 'SXM',
+    'LO': 'SVK',
+    'SI': 'SVN',
+    'BP': 'SLB',
+    'SO': 'SOM',
+    'SF': 'ZAF',
+    'SX': 'SGS',
+    'OD': 'SSD',
+    'SP': 'ESP',
+    'PG': '-',
+    'CE': 'LKA',
+    'SU': 'SDN',
+    'NS': 'SUR',
+    'SV': 'SJM',
+    'WZ': 'SWZ',
+    'SW': 'SWE',
+    'SZ': 'CHE',
+    'SY': 'SYR',
+    'TW': 'TWN',
+    'TI': 'TJK',
+    'TZ': 'TZA',
+    'TH': 'THA',
+    'TT': 'TLS',
+    'TO': 'TGO',
+    'TL': 'TKL',
+    'TN': 'TON',
+    'TD': 'TTO',
+    'TE': 'UMI',
+    'TS': 'TUN',
+    'TU': 'TUR',
+    'TX': 'TKM',
+    'TK': 'TCA',
+    'TV': 'TUV',
+    'UG': 'UGA',
+    'UP': 'UKR',
+    'AE': 'ARE',
+    'UK': 'GBR',
+    'US': 'USA',
+    'UY': 'URY',
+    'UZ': 'UZB',
+    'NH': 'VUT',
+    'VT': 'VAT',
+    'VE': 'VEN',
+    'VM': 'VNM',
+    'VI': 'VGB',
+    'VQ': 'VIR',
+    '-': '-',
+    '-': '-',
+    'YM': 'YEM',
+    '-': '-',
+    'ZA': 'ZMB',
+    'ZI': 'ZWE'
+}
+
+
+# COMMAND ----------
+
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
+
+df['fecha'] = pd.to_datetime(df['fecha'])
+df['iso_country'] = df['pais'].map(fips_to_iso)
+
+# Filtrar el DataFrame para incluir solo los datos del día de hoy
+df_hoy = df[df['fecha'].dt.strftime('%Y-%m-%d') == "2024-08-13"]
+
+custom_color_scale = [
+    [-5, 'red'],     # Valor más bajo (rojo)
+    [0, 'yellow'], # Color intermedio (amarillo)
+    [5, 'green']    # Valor más alto (verde)
+]
+# Crear el mapa interactivo
+fig = px.choropleth(df_hoy, 
+                    locations='iso_country', 
+                    locationmode='ISO-3',
+                    color='y_real',
+                    color_continuous_scale='blues',  # Cambiado a colorescale predefinido
+                    title='Mapa del Mundo con Índice y_real por País')
+
+fig.show()
+
+
+# COMMAND ----------
+
 
