@@ -1,13 +1,13 @@
 name: Web App CI/CD
 run-name: Running CI/CD for our web application 🚀
+
 on:
     push:
         branches:
             - first_implementation_cicd
-        paths:
-            - "web_solution/**"
         tags:
             - "web_solution-v*"
+
 jobs:
     # Create job for checking out the repository and executing unit tests with pytest
     unit-tests:
@@ -27,6 +27,7 @@ jobs:
             - name: Run unit tests
               run: |
                   pytest web_solution/tests/
+
     # Create a job for building and pushing the Docker image
     build-and-push-docker-image:
         name: Build and Push Docker Image
@@ -35,29 +36,17 @@ jobs:
         steps:
           - name: Checkout code
             uses: actions/checkout@v4
+          
           - name: Log in to Azure Container Registry
             run: |
               echo "${{ secrets.DOCKER_PASSWORD }}" | docker login ${{ secrets.DOCKER_REGISTRY }} --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
           - name: Build Docker image
             run: |
-              docker build -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} .
-              docker tag ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:latest
+              docker build -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.ref_name }} .
+              docker tag ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.ref_name }} ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:latest
+
           - name: Push Docker image to ACR
             run: |
-              docker push ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
+              docker push ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.ref_name }}
               docker push ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:latest
-#   Explore-GitHub-Actions:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-#       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-#       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-#       - run: echo "💡 This is a very chingona feature."
-#       - name: Check out repository code
-#         uses: actions/checkout@v4
-#       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-#       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-#       - name: List files in the repository
-#         run: |
-#           ls ${{ github.workspace }}
-#       - run: echo "🍏 This job's status is ${{ job.status }}."
