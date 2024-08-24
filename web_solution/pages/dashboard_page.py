@@ -50,7 +50,13 @@ def create_time_series_plot():
 
 fig = create_time_series_plot()
 
+goldstein_data_shape = (
+    "No value generated"
+    if data.goldstein_data_df is None
+    else data.goldstein_data_df.shape
+)
+
 with tgb.Page() as dashboard_page:
     tgb.text("# Latam Fusion Dashboard", mode="md")
-    tgb.text(f"Goldstein dataset shape: {data.goldstein_data_df.shape}")
+    tgb.text(f"Goldstein dataset shape: {goldstein_data_shape}")
     tgb.chart(figure="{fig}")
