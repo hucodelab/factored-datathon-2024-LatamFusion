@@ -127,7 +127,7 @@ df.columns
 
 # COMMAND ----------
 
-# MAGIC %pip install sqlalchemy
+# %pip install sqlalchemy
 
 # COMMAND ----------
 
@@ -138,7 +138,7 @@ from pyspark.sql.functions import col, to_date, dayofmonth, weekofyear, month, y
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.regression import RandomForestRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
-from sqlalchemy import create_engine
+# from sqlalchemy import create_engine
 
 
 # 1. Función para la conexión con Azure y Spark
