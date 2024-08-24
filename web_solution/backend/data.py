@@ -2,7 +2,7 @@ import os
 
 from .db import DBConnector
 
-connection_string = os.getenv("DB_CONNECTION_STRING")
+connection_string = os.environ["DB_CONNECTION_STRING"]
 
 connection = DBConnector(connection_string)
 

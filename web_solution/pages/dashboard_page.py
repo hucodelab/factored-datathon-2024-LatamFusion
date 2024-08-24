@@ -1,5 +1,6 @@
 import plotly.graph_objects as go
 import taipy.gui.builder as tgb
+from backend import data
 
 from pages.processing import process_df_to_plot
 
@@ -51,4 +52,5 @@ fig = create_time_series_plot()
 
 with tgb.Page() as dashboard_page:
     tgb.text("# Latam Fusion Dashboard", mode="md")
+    tgb.text(f"Goldstein dataset shape: {data.goldstein_data_df.shape}")
     tgb.chart(figure="{fig}")

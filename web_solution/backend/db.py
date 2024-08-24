@@ -16,7 +16,7 @@ class DBConnector:
         self.connection_string = connection_string
         self.engine = create_engine(connection_string)
 
-    def fetch_data_as_dataframe(self, query=None):
+    def fetch_data_as_dataframe(self, query):
         """
         Returns the results of `query` as a pandas DataFrame.
 
