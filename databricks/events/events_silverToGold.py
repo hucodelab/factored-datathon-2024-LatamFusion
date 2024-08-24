@@ -9,6 +9,7 @@
 
 # COMMAND ----------
 
+# Import required libraries
 from pyspark.sql import functions as F
 
 # COMMAND ----------
@@ -19,7 +20,7 @@ eventsSilver = spark.read.format("delta").load(delta_path)
 
 # COMMAND ----------
 
-# filtered by columns
+# Filtered by columns
 delta_path = "/mnt/silver/eventsDAGASilver1"
 
 eventsDAGASilver1 = eventsSilver \
@@ -35,7 +36,7 @@ eventsDAGASilver1.write.format("delta").mode("overwrite").option("mergeSchema", 
 
 # COMMAND ----------
 
-# filtered by columns
+# Filtered by columns
 delta_path = "/mnt/silver/eventsDAGASilver1"
 spark.read.format("delta").load(delta_path).show()
 
@@ -49,20 +50,22 @@ weightedAvgGoldsteinToneGold = eventsDAGASilver1.groupBy("DATE","ActionGeo_Count
 
 # COMMAND ----------
 
+# Set up Azure Blob Storage credentials and container details
 storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
 storage_account_name = "factoredatathon2024"
 container_name = "gold"
 
+# Configure Spark to access Azure Blob Storage
 spark.conf.set(
     f"fs.azure.account.key.{storage_account_name}.blob.core.windows.net",
     f"{storage_account_key}"
 )
 
+# Define the file path in Blob Storage
 file_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/weightedAvgGoldsteinToneGold.csv"
+
+# Combine partitions into a single file
 weightedAvgGoldsteinToneGold = weightedAvgGoldsteinToneGold.coalesce(1)
+
+# Save the DataFrame as a CSV file to Azure Blob Storage
 weightedAvgGoldsteinToneGold.write.format("csv").mode("overwrite").option("mergeSchema", "true").option('header', 'true').save(file_path)
-
-# COMMAND ----------
-
-# print(df_read.count())
-# 46 millions of rows
