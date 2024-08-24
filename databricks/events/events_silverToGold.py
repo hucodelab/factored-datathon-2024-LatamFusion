@@ -49,7 +49,7 @@ weightedAvgGoldsteinToneGold = eventsDAGASilver1.groupBy("DATE","ActionGeo_Count
 
 # COMMAND ----------
 
-storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
 storage_account_name = "factoredatathon2024"
 container_name = "gold"
 

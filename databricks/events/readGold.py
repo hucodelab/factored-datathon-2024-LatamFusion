@@ -9,7 +9,7 @@
 
 # COMMAND ----------
 
-storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
 storage_account_name = "factoredatathon2024"
 container_name = "gold"
 
@@ -337,7 +337,7 @@ def save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_tr
     # Define the connection properties
     connection_properties = {
         "user": "factoredata2024admin",
-        "password": "mdjdmliipo3^%^$5mkkm63",
+        "password": dbutils.secrets.get(scope="events", key="ASQLPassword"),
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     }
 
@@ -357,9 +357,9 @@ def main():
     storage_account_name = "factoredatathon2024"
     container_name = "gold"
     file_name = "weightedAvgGoldsteinToneGold.csv"
-    output_file = "model_predictions.csv"
+    # output_file = "model_predictions.csv"
 
-    storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+    storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
     storage_account_name = "factoredatathon2024"
     container_name = "gold"
 
@@ -392,7 +392,7 @@ def main():
             
             if train_dates is not None:
                 # Guardar resultados en SQL
-                save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file)
+                save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country)
 
 
 # Ejecutar el script
