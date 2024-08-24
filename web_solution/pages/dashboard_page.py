@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 import taipy.gui.builder as tgb
 
-from library.processing import process_df_to_plot
+from pages.processing import process_df_to_plot
 
 datasets_dict = process_df_to_plot()
 

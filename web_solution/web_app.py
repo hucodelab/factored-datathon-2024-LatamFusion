@@ -1,5 +1,5 @@
-from library.dashboard_page import dashboard_page
-from library.presentation_page import presentation_page
+from pages.dashboard_page import dashboard_page
+from pages.presentation_page import presentation_page
 from taipy.gui import Gui
 
 root_md = "<|navbar|>"
