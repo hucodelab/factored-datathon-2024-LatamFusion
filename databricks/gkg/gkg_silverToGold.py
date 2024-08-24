@@ -6,9 +6,14 @@ import uuid
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC This notebook get the data from Bronze (gkg) and then process the data and then label the data based on the NLP algorithm that label the themes. So, we used the themes to label the data
+
+# COMMAND ----------
+
 # account for landing files from https
 storage_account_name = "factoredatathon2024"
-storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
 container_name = "gkg"
 
 spark.conf.set(
@@ -108,7 +113,7 @@ df_result = df_with_topics.groupBy(
 
 # account for landing files from https
 storage_account_name = "factoredatathon2024"
-storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
 container_name = "silver"
 
 # Configure Spark to use the storage account key
