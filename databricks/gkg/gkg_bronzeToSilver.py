@@ -10,7 +10,7 @@ from pyspark.sql.functions import to_date, col, split, explode, to_date, array_c
 
 # account for landing files from https
 storage_account_name = "factoredatathon2024"
-storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
 container_name = "gkg"
 
 spark.conf.set(
@@ -47,7 +47,7 @@ df_sorted = df_grouped.orderBy(col("count").desc())
 server = "factoredata2024.database.windows.net"
 db = "dactoredata2024"
 user = "factoredata2024admin"
-password = "mdjdmliipo3^%^$5mkkm63"
+password = dbutils.secrets.get(scope="events", key="ASQLPassword")
 
 # JDBC connection properties
 jdbc_url = f"jdbc:sqlserver://{server}:1433;database={db};user={user}@{db};password={password};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"

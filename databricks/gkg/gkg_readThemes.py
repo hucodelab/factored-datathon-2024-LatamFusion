@@ -30,7 +30,7 @@ nltk.download('stopwords')
 # COMMAND ----------
 
 # HERE IS READING FROM READING FROM STORAGE ACCOUNT
-storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ=="
+storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
 storage_account_name = "factoredatathon2024"
 container_name = "gold"
 
@@ -55,7 +55,7 @@ jdbc_url = f"jdbc:sqlserver://{jdbc_hostname}:{jdbc_port};database={jdbc_databas
 # Define the connection properties
 connection_properties = {
     "user": "factoredata2024admin",
-    "password": "mdjdmliipo3^%^$5mkkm63",
+    "password": dbutils.secrets.get(scope="events", key="ASQLPassword"),
     "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 }
 
@@ -252,7 +252,7 @@ def configure_azure_sql(jdbc_hostname, jdbc_port, jdbc_database, user, password)
     jdbc_url = f"jdbc:sqlserver://{jdbc_hostname}:{jdbc_port};database={jdbc_database}"
     connection_properties = {
         "user": user,
-        "password": password,
+        "password": dbutils.secrets.get(scope="events", key="ASQLPassword"),
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     }
     return jdbc_url, connection_properties
@@ -326,7 +326,7 @@ def get_themes_mapping(themes_list, cluster_names):
 def main():
     install_dependencies()
 
-    storage_account_key = "wgbe0Fzs4W3dPNc35dp//uumz+SPDXVLLGu0mNaxTs2VLHCCPnD7u79PYt4mKeSFboqMRnZ+s+ez+ASty+k+sQ==" #QUITAR ESTO
+    storage_account_key = dbutils.secrets.get(scope="events", key="DataLakeKey")
     storage_account_name = "factoredatathon2024"
     container_name = "gold"
     configure_azure_storage(storage_account_name, storage_account_key)
@@ -339,7 +339,7 @@ def main():
     jdbc_port = 1433
     jdbc_database = "dactoredata2024"
     user = "factoredata2024admin"
-    password = "mdjdmliipo3^%^$5mkkm63" #QUITAR ESTO
+    password = dbutils.secrets.get(scope="events", key="ASQLPassword")
     jdbc_url, connection_properties = configure_azure_sql(jdbc_hostname, jdbc_port, jdbc_database, user, password)
     sql_query = "(SELECT THEMES_EXPLODED, count FROM [gkg].[THEMES] WHERE THEMES_EXPLODED != '') AS tmp"
     themes = read_data_from_sql(jdbc_url, sql_query, connection_properties)
