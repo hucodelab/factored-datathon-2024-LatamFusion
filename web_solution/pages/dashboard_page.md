@@ -20,6 +20,8 @@ Average world Goldstein score: <|{average_goldstein:.2f}|text|>
 
 |>
 
+<|chart|figure={fig_goldstein_map}|>
 
+<|chart|figure={fig_tone_map}|>
 
 
