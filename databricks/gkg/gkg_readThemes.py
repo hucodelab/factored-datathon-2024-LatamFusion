@@ -4,11 +4,13 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install nltk
-# MAGIC %pip install gensim
+# Install required NLP libraries
+%pip install nltk
+%pip install gensim
 
 # COMMAND ----------
 
+# Import required libraries
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -24,6 +26,7 @@ from collections import Counter
 
 # COMMAND ----------
 
+# Tokenize and stopwords removal tools
 nltk.download('punkt')
 nltk.download('stopwords')
 
@@ -192,30 +195,16 @@ print(themes.head())
 
 df_clusters = pd.DataFrame({'THEMES_EXPLODED': themes_list, 'Cluster_Name': df['Cluster_Name']})
 
-# Convertir el DataFrame en un diccionario
+# Convert DF into dictionary
 themes_mapping = df_clusters.set_index('THEMES_EXPLODED')['Cluster_Name'].to_dict()
 
-# Imprimir el diccionario
+# Print dict.
 print(themes_mapping)
 
 # COMMAND ----------
 
 # MAGIC %md ## Themes Labels: Code Modularization:
 # MAGIC
-
-# COMMAND ----------
-
-import numpy as np
-import pandas as pd
-from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-import seaborn as sns
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem import PorterStemmer
-from gensim.models import Word2Vec
-from collections import Counter
 
 # COMMAND ----------
 
@@ -362,7 +351,6 @@ def main():
     print(themes_mapping)
 
 
-
 # COMMAND ----------
 
 main()
@@ -372,3 +360,7 @@ main()
 spark_themes = spark.createDataFrame(themes)
 dbfs_path_delta = "/mnt/silver/themesMappedSilver"
 spark_themes.write.format("delta").mode("overwrite").save(dbfs_path_delta)
+
+# COMMAND ----------
+
+

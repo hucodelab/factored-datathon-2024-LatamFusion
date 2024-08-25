@@ -1,4 +1,5 @@
 # Databricks notebook source
+# Import required libraries
 from pyspark.sql.functions import to_date, col, split, explode, to_date, array_contains, lit, when, count, collect_list, broadcast
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
@@ -44,6 +45,7 @@ df_reduced = df_reduced.withColumn("uuid", uuid_udf())
 
 # COMMAND ----------
 
+# Limit data to 50 most relevant countries with most news
 count_df = df_reduced.groupBy("countryCode").count().orderBy("count", ascending=False).limit(50)
 
 # COMMAND ----------

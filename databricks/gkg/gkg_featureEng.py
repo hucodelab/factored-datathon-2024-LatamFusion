@@ -1,4 +1,5 @@
 # Databricks notebook source
+# Required libraries
 from pyspark.sql.functions import to_date, col, split, explode, to_date, array_contains, lit, when, count
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.regression import RandomForestRegressor
@@ -26,6 +27,7 @@ feat_eng = df.filter(col("date0") > "2023-01-01") \
 
 # COMMAND ----------
 
+# Perform feature engineering and return feature importance using Random Forest
 def feature_engineering(df):
 
     # Step 1: Assemble all features into a single vector
@@ -56,6 +58,7 @@ for feature, importance in feature_importances[:10]:
 
 # COMMAND ----------
 
+# Function to evaluate the model's performance
 def feature_engineering_assessment(df):
     # Step 4: Make predictions on the same DataFrame (or use a test set if available)
     predictions = model.transform(df.limit(10000))
