@@ -142,3 +142,7 @@ __blobstorage__
 __queuestorage__
 __azurite_db*__.json
 .python_packages
+
+count_blob_storage.sh
+azfunc-streaming-cicd.yml
+fips_to_country.json
