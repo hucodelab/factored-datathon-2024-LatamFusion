@@ -66,10 +66,14 @@ connection_properties = {
 }
 
 # Table name in Azure SQL Database
-table_name = "gkg.50countries"
+table_name = "[gkg].[50countries]"
 
 # Write DataFrame to Azure SQL Database
-count_df.write.jdbc(url=jdbc_url, table=table_name, mode="overwrite", properties=connection_properties)
+# count_df.write.jdbc(url=jdbc_url, table=table_name, mode="overwrite", properties=connection_properties)
+
+# Read data from Azure SQL Database into DataFrame
+df = spark.read \
+    .jdbc(url=jdbc_url, table=table_name, properties=connection_properties)
 
 # COMMAND ----------
 
