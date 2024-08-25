@@ -32,18 +32,7 @@ df = spark.read.format("delta").load(file_path)
 
 # COMMAND ----------
 
-df.show()
-
-# COMMAND ----------
-
-df.select("countryCode").distinct().count()
-
-# COMMAND ----------
-
 countries_less_than_500 = df.groupBy("countryCode").count().filter("count < 1000")
-
-# Contar el número total de países con menos de 500 noticias
-countries_less_than_500.count()
 
 # COMMAND ----------
 
@@ -55,8 +44,6 @@ country_count.show(50)
 
 # COMMAND ----------
 
-
-
 # Agrupar por 'countryCode' y contar el número de filas por país
 country_counts = df.groupBy("countryCode").count()
 
@@ -65,9 +52,6 @@ countries_to_keep = country_counts.filter(F.col("count") >= 1000).select("countr
 
 # Filtrar el DataFrame original para mantener solo las filas de esos países
 df = df.join(countries_to_keep, on="countryCode", how="inner")
-
-# Mostrar las primeras filas del DataFrame resultante
-df.show()
 
 # COMMAND ----------
 
@@ -83,9 +67,6 @@ for label in ["SOCIAL", "POLITICAL", "ECONOMIC"]:
 
 # Eliminar la columna Total_Labels si no la necesitas
 df = df.drop("Total_Labels")
-
-# Mostrar el resultado
-df.show(truncate=False)
 
 # COMMAND ----------
 
