@@ -146,7 +146,7 @@ def save_results_to_csv(predictions_train, predictions_test, output_file):
 
     results = train_results.union(test_results)
 
-    results.write.mode("append").option("header", "true").csv(output_file)
+    results.write.mode("overwrite").option("header", "true").csv(output_file)
 """
 
 
@@ -172,7 +172,7 @@ def save_results_to_sql(predictions_train, predictions_test, jdbc_url, table_nam
     results = train_results.union(test_results)
 
     # Guarda los resultados en la base de datos SQL
-    results.write.mode("append") \
+    results.write.mode("overwrite") \
         .jdbc(url=jdbc_url, table=table_name, properties=connection_properties)
 
 # 6. Función principal
