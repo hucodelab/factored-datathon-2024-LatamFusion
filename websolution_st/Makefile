@@ -13,7 +13,8 @@ build:
 # Run the services using docker-compose
 .PHONY: run
 run:
-	docker run --name $(WEB_APP_NAME) --env-file .env -d -p 8501:8501 $(WEB_APP_NAME)
+#	docker run --name $(WEB_APP_NAME) --env-file .env -d -p 8501:8501 $(WEB_APP_NAME)
+	docker run --name $(WEB_APP_NAME) -d -p 8501:8501 $(WEB_APP_NAME)
 
 # Stop all running containers
 .PHONY: stop
