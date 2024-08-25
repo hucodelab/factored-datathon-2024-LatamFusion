@@ -25,7 +25,7 @@ jobs:
 
           - name: Build Docker image
             run: |
-              docker build -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.ref_name }} ./web_solution
+              docker build -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.ref_name }} ./websolution_st
               docker tag ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:${{ github.ref_name }} ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.IMAGE_NAME }}:latest
 
           - name: Push Docker image to ACR
