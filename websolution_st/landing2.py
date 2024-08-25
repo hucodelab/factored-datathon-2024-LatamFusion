@@ -5,7 +5,6 @@ import plotly.express as px
 import pymssql  # Or use pyodbc if preferred
 import streamlit as st
 
-### TITLE AND HEADER ###
 # Title and Header
 st.title("Welcome to My Streamlit Application")
 st.header("Explore the Features and Analytics")
@@ -16,10 +15,11 @@ st.write("""
     Navigate through the side panel to explore different pages such as data uploads, charts, 
     and machine learning models. Enjoy your time exploring!
 """)
-### TITLE AND HEADER END ###
 
-
-### SIDEBAR START ###
+# Add an Image (optional)
+st.image(
+    "https://via.placeholder.com/400", caption="Your Logo Here", use_column_width=True
+)
 
 # Adding a Sidebar
 st.sidebar.title("Navigation")
@@ -40,13 +40,11 @@ elif option == "Visualizations":
 elif option == "Models":
     st.write("Run your machine learning models here.")
 
-### SIDEBAR END ###
-
 # Azure SQL Database connection details
-server = "factoredata2024.database.windows.net"
-database = "dactoredata2024"
-username = "factoredata2024admin"
-password = "mdjdmliipo3^%^$5mkkm63"
+server = os.getenv("SQL_SERVER")
+database = os.getenv("SQL_SERVER_DATABASE")
+username = os.getenv("SQL_SERVER_ADMIN")
+password = os.getenv("SQL_SERVER_PASSWORD")
 
 
 # Connect to Azure SQL
