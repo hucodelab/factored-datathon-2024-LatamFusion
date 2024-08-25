@@ -665,9 +665,6 @@ The team members are:
 """
     )
 
-# # Reverse mapping from full country name to country code
-# country_to_code = {v: k for k, v in code_to_country.items()}
-
 def visualizations():
 
     if goldstein_data is not None and not goldstein_data.empty:
