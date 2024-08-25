@@ -1,4 +1,4 @@
-name: Web App CI/CD
+name: Streamlit App CI/CD
 run-name: Running CI/CD for our web application 🚀
 
 on:
