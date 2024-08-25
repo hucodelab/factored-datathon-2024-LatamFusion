@@ -1,8 +1,9 @@
-import streamlit as st
+import os
+
 import pandas as pd
-import pymssql  # Or use pyodbc if preferred
-import matplotlib.pyplot as plt
 import plotly.express as px
+import pymssql  # Or use pyodbc if preferred
+import streamlit as st
 
 # Title and Header
 st.title("Welcome to My Streamlit Application")
@@ -16,14 +17,18 @@ st.write("""
 """)
 
 # Add an Image (optional)
-st.image("https://via.placeholder.com/400", caption="Your Logo Here", use_column_width=True)
+st.image(
+    "https://via.placeholder.com/400", caption="Your Logo Here", use_column_width=True
+)
 
 # Adding a Sidebar
 st.sidebar.title("Navigation")
 st.sidebar.write("Use this panel to navigate through different sections.")
 
 # Sidebar options
-option = st.sidebar.selectbox("Choose a page:", ["Home", "Data", "Visualizations", "Models"])
+option = st.sidebar.selectbox(
+    "Choose a page:", ["Home", "Data", "Visualizations", "Models"]
+)
 
 # Customize home content based on user selection
 if option == "Home":
@@ -36,15 +41,18 @@ elif option == "Models":
     st.write("Run your machine learning models here.")
 
 # Azure SQL Database connection details
-server = 'factoredata2024.database.windows.net'
-database = 'dactoredata2024'
-username = 'factoredata2024admin'
-password = 'mdjdmliipo3^%^$5mkkm63'
+server = os.getenv("SQL_SERVER")
+database = os.getenv("SQL_SERVER_DATABASE")
+username = os.getenv("SQL_SERVER_ADMIN")
+password = os.getenv("SQL_SERVER_PASSWORD")
+
 
 # Connect to Azure SQL
 def get_data_from_azure():
     try:
-        conn = pymssql.connect(server=server, user=username, password=password, database=database)
+        conn = pymssql.connect(
+            server=server, user=username, password=password, database=database
+        )
         query = """
                 SELECT [fecha]
                     ,[pais]
@@ -60,6 +68,7 @@ def get_data_from_azure():
         st.error(f"Error connecting to the database: {e}")
         return None
 
+
 # Fetch data from Azure SQL
 st.title("Time Series from Azure SQL Database")
 
@@ -69,19 +78,23 @@ if df is not None and not df.empty:
     st.write("Data Preview:", df.head())
 
     # Convert 'fecha' column to datetime
-    df['fecha'] = pd.to_datetime(df['fecha'])
+    df["fecha"] = pd.to_datetime(df["fecha"])
 
     # Filter data by country
-    unique_countries = df['pais'].unique()
+    unique_countries = df["pais"].unique()
     country = st.selectbox("Select Country", unique_countries)
 
     # Filter data based on the selected country
-    df_filtered = df[df['pais'] == country]
+    df_filtered = df[df["pais"] == country]
 
     # Plot the time series using Plotly
-    fig = px.line(df_filtered, x='fecha', y=['y_pred', 'y_real'], 
-                  labels={'value': 'Values', 'variable': 'Type'},
-                  title=f'Time Series for {country}')
+    fig = px.line(
+        df_filtered,
+        x="fecha",
+        y=["y_pred", "y_real"],
+        labels={"value": "Values", "variable": "Type"},
+        title=f"Time Series for {country}",
+    )
 
     # Display plot in Streamlit
     st.plotly_chart(fig, use_container_width=True)
