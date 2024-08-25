@@ -29,6 +29,7 @@ df = spark.read.csv(file_path, sep="\t", header=True)
 
 # convert into date format
 df = df.withColumn("date0", to_date("DATE", "yyyyMMdd"))
+df = df.filter(col("date0") > "2023-08-01")
 df = df.select("date0", "THEMES", "TONE")
 df = df.dropna(subset=["date0", "THEMES", "TONE"])
 df = df.withColumn("THEMES_ARRAY", split(df["THEMES"], ";"))

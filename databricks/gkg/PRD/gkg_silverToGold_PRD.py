@@ -51,6 +51,26 @@ df_reduced = df_reduced.withColumn("uuid", uuid_udf())
 
 count_df = df_reduced.groupBy("countryCode").count().orderBy("count", ascending=False).limit(50)
 
+server = "factoredata2024.database.windows.net"
+db = "dactoredata2024"
+user = "factoredata2024admin"
+password = dbutils.secrets.get(scope="events", key="ASQLPassword")
+
+# JDBC connection properties
+jdbc_url = f"jdbc:sqlserver://{server}:1433;database={db};user={user}@{db};password={password};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
+
+connection_properties = {
+    "user": f"{user}@{server}",
+    "password": password,
+    "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+}
+
+# Table name in Azure SQL Database
+table_name = "gkg.50countries"
+
+# Write DataFrame to Azure SQL Database
+count_df.write.jdbc(url=jdbc_url, table=table_name, mode="overwrite", properties=connection_properties)
+
 # COMMAND ----------
 
 # Collect the column from the smaller DataFrame as a list
