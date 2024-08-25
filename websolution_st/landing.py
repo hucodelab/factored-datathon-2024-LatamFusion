@@ -2,6 +2,7 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from pymssql import connect
 from sqlalchemy import create_engine
 
 ### DATA LOADING ###
@@ -13,7 +14,14 @@ password = "mdjdmliipo3^%^$5mkkm63"
 
 connection_string = "mssql+pyodbc://factoredata2024admin:mdjdmliipo3^%^$5mkkm63@factoredata2024.database.windows.net/dactoredata2024?driver=ODBC+Driver+18+for+SQL+Server"
 
-conn = create_engine(connection_string)
+# conn = create_engine(connection_string)
+# Create pymssql connection
+conn = connect(
+    server=server,
+    user=username,
+    password=password,
+    database=database,
+)
 
 query_goldstein = """
 SELECT [DATE]
