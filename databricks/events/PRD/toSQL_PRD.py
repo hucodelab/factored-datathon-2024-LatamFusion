@@ -168,7 +168,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-from sqlalchemy import create_engine
 df_combined = pd.DataFrame()
 
 # 1. Función para la conexión con Azure y Spark (ajustada)
