@@ -167,9 +167,7 @@ for country_selected in countries:
     df_combined = pd.concat([df_combined, future_results])
 
 # Guardar el DataFrame combinado en un archivo CSV
-df_combined.to_csv(output_file, index=False)
-
-
+# df_combined.to_csv(output_file, index=False)
 
 # COMMAND ----------
 
