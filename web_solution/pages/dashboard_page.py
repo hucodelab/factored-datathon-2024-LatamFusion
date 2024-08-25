@@ -2,53 +2,35 @@ import plotly.graph_objects as go
 import taipy.gui.builder as tgb
 from backend import data
 
-from pages.processing import process_df_to_plot
 
-datasets_dict = process_df_to_plot()
+def create_time_series_plot(country_code: str):
+    data_for_plot = data.get_goldstein_country(country_code)
 
-# ts_plot_config = {
-#     "name_df": datasets_dict.keys(),
-#     "names": datasets_dict.keys().mapping(lambda x: x.capitalize()),
-#     "colors": ["blue", "orange", "green"],
-# }
+    if data_for_plot is None:
+        return go.Figure()
+    else:
+        trace_pred = go.Scatter(
+            x=data_for_plot["fecha"],
+            y=data_for_plot["y_pred"],
+            mode="lines",
+            name="Predicted",
+            line=dict(color="blue"),
+        )
 
+        trace_real = go.Scatter(
+            x=data_for_plot["fecha"],
+            y=data_for_plot["y_real"],
+            mode="lines",
+            name="Real",
+            line=dict(color="orange"),
+        )
 
-def create_time_series_plot():
-    # Extract datasets
-    train_df = datasets_dict["train"]
-    test_df = datasets_dict["test"]
-    real_df = datasets_dict["real"]
+        fig = go.Figure(data=[trace_pred, trace_real])
 
-    trace_train = go.Scatter(
-        x=train_df["date"],
-        y=train_df["goldstein"],
-        mode="lines",
-        name="Train",
-        line=dict(color="blue"),
-    )
-
-    trace_test = go.Scatter(
-        x=test_df["date"],
-        y=test_df["goldstein"],
-        mode="lines",
-        name="Test",
-        line=dict(color="orange"),
-    )
-
-    trace_real = go.Scatter(
-        x=real_df["date"],
-        y=real_df["goldstein"],
-        mode="lines",
-        name="Real",
-        line=dict(color="green"),
-    )
-
-    fig = go.Figure(data=[trace_train, trace_test, trace_real])
-
-    return fig
+        return fig
 
 
-fig = create_time_series_plot()
+fig = create_time_series_plot(country_code="NL")
 
 goldstein_data_shape = (
     "No value generated"
