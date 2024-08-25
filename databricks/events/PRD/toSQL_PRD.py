@@ -269,7 +269,7 @@ def train_model_and_get_predictions(events_filtered):
     return X_train.index, X_test.index, y_pred_train, y_pred_test, y_train, y_test
 
 # 5. Función para guardar los resultados en SQL (ajustada para incluir y_train y y_test)
-def save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country, output_file):
+def save_results_to_sql(train_dates, test_dates, y_pred_train, y_pred_test, y_train, y_test, country):
     # Crear DataFrame para train
     results_train = pd.DataFrame({
         'fecha': train_dates,
