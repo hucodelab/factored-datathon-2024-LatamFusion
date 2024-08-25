@@ -46,7 +46,7 @@ countries = data.get_unique_countries()
 
 def on_country_change(state: State, country_code: str):
     state.selected_country = country_code
-    state.fig = create_time_series_plot(country_code)
+    state.fig = create_time_series_plot(state.selected_country)
 
 
 with tgb.Page() as dashboard_page:
