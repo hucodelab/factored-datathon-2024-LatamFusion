@@ -151,9 +151,7 @@ st.sidebar.title("Navigation")
 st.sidebar.write("Use this panel to navigate through different sections.")
 
 # Sidebar options
-option = st.sidebar.selectbox(
-    "Choose a page:", ["Home", "Data", "Visualizations", "Models"]
-)
+option = st.sidebar.selectbox("Choose a page:", ["Home", "Visualizations"])
 
 
 # Customize home content based on user selection
