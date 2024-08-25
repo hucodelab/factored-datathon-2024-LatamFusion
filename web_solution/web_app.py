@@ -12,4 +12,6 @@ pages = {
 }
 
 
-Gui(pages=pages).run(host="0.0.0.0", port=5000, debug=True, title="GDELT Dashboard")
+Gui(pages=pages).run(
+    host="0.0.0.0", port=5000, debug=True, title="GDELT Dashboard", use_reloader=False
+)

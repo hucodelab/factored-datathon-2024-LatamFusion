@@ -19,6 +19,21 @@ except (NoDBConnection, Exception):
     print("No connection to the database.")
 
 
+tone_prediction_gold = """
+SELECT [DATE]
+      ,[Country]
+      ,[y_pred]
+      ,[y_real]
+  FROM [gkg].[tonePredictionsGold]
+"""
+
+try:
+    tone_data_df = connection.fetch_data_as_dataframe(tone_prediction_gold)
+except (NoDBConnection, Exception):
+    tone_data_df = None
+    print("No connection to the database.")
+
+
 def get_unique_countries():
     if goldstein_data_df is None:
         return []
