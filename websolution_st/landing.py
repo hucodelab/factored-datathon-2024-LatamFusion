@@ -603,9 +603,6 @@ tone_data = pd.read_sql(query_tone, conn)
 def presentation():
     st.markdown(
         """
-
-# Description
-
 # Factored Datathon 2024 - LatamFusion
 
 ## GDELT Analysis Dashboard
@@ -740,15 +737,10 @@ def worldMap():
     # Add a date selector for the map
     selected_date = st.date_input("Select Date for World Map", value=datetime(2024, 7, 30))
 
-
-
-    # df['DATE'] = pd.to_datetime(df['DATE'])
     df['iso_country'] = df['pais'].map(fips_to_iso)
 
     # Filter the DataFrame to include only data for the selected date
     df_today = df[df['DATE'].dt.date == selected_date]
-
-    # df_today = df[df['DATE'].dt.strftime('%Y-%m-%d') == "2024-07-30"]
 
     if not df_today.empty:
         # Create the interactive choropleth map
@@ -759,6 +751,22 @@ def worldMap():
             color='y_real',
             color_continuous_scale='RdYlGn',  # Color scale
             title='World Map with Goldstein scale average index for each country'
+        )
+
+        # Display the choropleth map in Streamlit
+        st.plotly_chart(fig_choropleth, use_container_width=True)
+    else:
+        st.warning("No data available for the specified date.")
+
+    if not df_today.empty:
+        # Create the interactive choropleth map
+        fig_choropleth = px.choropleth(
+            df_today, 
+            locations='iso_country', 
+            locationmode='ISO-3',
+            color='y_pred',
+            color_continuous_scale='Purples',  # Color scale
+            title='World Map with Goldstein scale average index predictions for each country'
         )
 
         # Display the choropleth map in Streamlit
@@ -782,7 +790,6 @@ option = st.sidebar.selectbox("Choose a page:", ["Home", "Goldstein Scale by Cou
 
 # Customize home content based on user selection
 if option == "Home":
-    st.write("You're on the Home page.")
     presentation()
 # elif option == "Data":
 #     st.write("Explore your data here.")
@@ -791,7 +798,6 @@ elif option == "Goldstein Scale by Country":
     visualizations()
 
 elif option == "World Map":
-    st.write("Check out your visualizations here.")
     worldMap()
 # elif option == "Models":
 #     st.write("Run your machine learning models here.")
