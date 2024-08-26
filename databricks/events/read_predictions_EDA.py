@@ -15,9 +15,37 @@ from datetime import datetime
 
 # COMMAND ----------
 
-# Load predictions and real data DF
-df = pd.read_csv("model_predictions.csv")
-df["fecha"] = pd.to_datetime(df["fecha"])
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.getOrCreate()
+
+server = "factoredata2024.database.windows.net"
+db = "dactoredata2024"
+user = "factoredata2024admin"
+password = dbutils.secrets.get(scope="events", key="ASQLPassword")
+
+# JDBC connection properties
+jdbc_url = f"jdbc:sqlserver://{server}:1433;database={db};user={user}@{db};password={password};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
+
+connection_properties = {
+    "user": f"{user}@{server}",
+    "password": password,
+    "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+}
+
+# Table name in Azure SQL Database
+table_name = "[events].[goldsteinPredictionsGold]"
+
+df_spark = spark.read.jdbc(url=jdbc_url, table=table_name, properties=connection_properties)
+
+# Convertir el DataFrame de Spark a un DataFrame de pandas
+df= df_spark.toPandas()
+
+df.head()
+
+# COMMAND ----------
+
+
+df["DATE"] = pd.to_datetime(df["DATE"])
 df.head(3)
 
 # COMMAND ----------
@@ -60,28 +88,11 @@ def plot_predictions_vs_real(df, pais, y_min=-5, y_max=5):
 
 # COMMAND ----------
 
-# Display 50 countries with most news
-df["pais"].value_counts().head(50).plot(kind="bar", figsize=(14, 7))
-
-# COMMAND ----------
-
-
-# Plotting values for USA
-plot_predictions_vs_real(df, 'US', y_min=-5, y_max=5)
-
-
-# COMMAND ----------
-
-# Plotting values for Russia
-plot_predictions_vs_real(df, 'RS', y_min=-5, y_max=5)
-
-# COMMAND ----------
-
 # Plotting script
-df = df.sort_values(by=['fecha'])
+df = df.sort_values(by=['DATE'])
 
 # Select the country you want to plot
-pais = 'BR'
+pais = 'AR'
 
 # Filter the DataFrame for the selected country
 df_pais = df[df['pais'] == pais]
@@ -89,8 +100,8 @@ df_pais = df[df['pais'] == pais]
 plt.figure(figsize=(10, 6))
 
 # Plot predictions and real values
-plt.plot(df_pais['fecha'], df_pais['y_real'], label='real', color='blue')
-plt.plot(df_pais['fecha'], df_pais['y_pred'], label='pred', color='red', linestyle='--')
+plt.plot(df_pais['DATE'], df_pais['y_real'], label='real', color='grey')
+plt.plot(df_pais['DATE'], df_pais['y_pred'], label='pred', color='orange', linestyle='--')
 
 plt.legend(loc='upper left')
 plt.title(f'Comparison of Predictions vs Real Values for {pais}')
@@ -107,7 +118,7 @@ plt.show()
 # Display halfway min-mean pred
 
 # Ensure the DataFrame is sorted by date
-df = df.sort_values(by=['fecha'])
+df = df.sort_values(by=['DATE'])
 
 # Select the country you want to plot
 pais = 'BR'  # Replace with the name of the country you want to plot
@@ -119,8 +130,8 @@ df_pais = df[df['pais'] == pais]
 plt.figure(figsize=(10, 6))
 
 # Plot predictions and real values
-plt.plot(df_pais['fecha'], df_pais['y_real'], label='Real', color='blue')
-plt.plot(df_pais['fecha'], df_pais['y_pred'], label='Pred', color='red', linestyle='--')
+plt.plot(df_pais['DATE'], df_pais['y_real'], label='Real', color='blue')
+plt.plot(df_pais['DATE'], df_pais['y_pred'], label='Pred', color='red', linestyle='--')
 
 # Calculate and plot the mean of predictions
 y_pred_mean = df_pais['y_pred'].mean()
@@ -146,6 +157,10 @@ plt.show()
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 # Function to generate alerts
 
 def generate_alerts(df, pais):
@@ -159,7 +174,7 @@ def generate_alerts(df, pais):
     """
     
     # Ensure the DataFrame is sorted by date
-    df = df.sort_values(by=['fecha'])
+    df = df.sort_values(by=['DATE'])
 
     # Filter the DataFrame for the selected country
     df_pais = df[df['pais'] == pais]
@@ -172,19 +187,19 @@ def generate_alerts(df, pais):
 
     # Filter future dates
     # today = pd.Timestamp.today()
-    today = pd.Timestamp('2024-06-01')
-    df_future = df_pais[df_pais['fecha'] > today]
+    today = pd.Timestamp('2024-08-23')
+    df_future = df_pais[df_pais['DATE'] > today]
 
     # Identify alerts
     alerts = df_future[df_future['y_pred'] < threshold]
 
     # Group by date and take the first record of each day
-    alerts = alerts.groupby('fecha').first().reset_index()
+    alerts = alerts.groupby('DATE').first().reset_index()
 
     # Print or save alerts
     if not alerts.empty:
         print(f"Alerts for {pais}:")
-        print(alerts[['fecha', 'y_pred', 'y_real']])
+        print(alerts[['DATE', 'y_pred', 'y_real']])
     else:
         print(f"No alerts for {pais}.")
 
@@ -480,11 +495,33 @@ fips_to_iso = {
 
 # Plot the worldmap warnings
 # Date to Datetime
-df['fecha'] = pd.to_datetime(df['fecha'])
+df['DATE'] = pd.to_datetime(df['DATE'])
 df['iso_country'] = df['pais'].map(fips_to_iso)
 
 # Filter the DataFrame to include only today's data
-df_today = df[df['fecha'].dt.strftime('%Y-%m-%d') == "2024-08-13"]
+df_today = df[df['DATE'].dt.strftime('%Y-%m-%d') == "2024-08-30"]
+
+# Create the interactive map
+fig = px.choropleth(df_today, 
+                    locations='iso_country', 
+                    locationmode='ISO-3',
+                    color='y_real',
+                    color_continuous_scale='RdYlGn',  # Changed to predefined colorscale
+                    title='World Map with y_real Index by Country')
+
+fig.show()
+
+
+# COMMAND ----------
+
+
+# Plot the worldmap warnings
+# Date to Datetime
+df['DATE'] = pd.to_datetime(df['DATE'])
+df['iso_country'] = df['pais'].map(fips_to_iso)
+
+# Filter the DataFrame to include only today's data
+df_today = df[df['DATE'].dt.strftime('%Y-%m-%d') == "2024-09-15"]
 
 custom_color_scale = [
     [-5, 'red'],     # Lowest value (red)
@@ -496,12 +533,11 @@ custom_color_scale = [
 fig = px.choropleth(df_today, 
                     locations='iso_country', 
                     locationmode='ISO-3',
-                    color='y_real',
-                    color_continuous_scale='blues',  # Changed to predefined colorscale
-                    title='World Map with y_real Index by Country')
+                    color='y_pred',
+                    color_continuous_scale='RdYlGn',  # Changed to predefined colorscale
+                    title='World Map with y_pred Index by Country')
 
 fig.show()
-
 
 # COMMAND ----------
 
