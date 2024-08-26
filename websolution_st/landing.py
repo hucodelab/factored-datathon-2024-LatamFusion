@@ -592,13 +592,7 @@ tone_data = pd.read_sql(query_tone, conn)
 ### DATA END ###
 
 # Title and Header
-st.title("GDELT Analysis Dashboard")
-st.header("A view of the world through data")
 
-# Description
-st.write("""
-See the world through data! This dashboard provides an overview of the GDELT dataset, which contains over 300 categories of events across the globe. Use the sidebar to navigate through different sections.
-""")
 
 # Add an Image (optional)
 # st.image(
@@ -609,7 +603,16 @@ See the world through data! This dashboard provides an overview of the GDELT dat
 def presentation():
     st.markdown(
         """
-# Factored Datathon 2024 - LatamFusion*
+
+# Description
+
+# Factored Datathon 2024 - LatamFusion
+
+## GDELT Analysis Dashboard
+
+### A view of the world through data
+
+See the world through data! This dashboard provides an overview of the GDELT dataset, which contains over 300 categories of events across the globe. Use the sidebar to navigate through different sections.
 
 ## Table of Contents 
 - [Description](#description)
@@ -727,6 +730,7 @@ def visualizations():
     """)
 
 ### WORLD MAP #################################################################
+def worldMap():
 
     st.header("World Map")
 
@@ -770,7 +774,8 @@ st.sidebar.title("Navigation")
 st.sidebar.write("Use this panel to navigate through different sections.")
 
 # Sidebar options
-option = st.sidebar.selectbox("Choose a page:", ["Home", "Visualizations"])
+option = st.sidebar.selectbox("Choose a page:", ["Home", "Goldstein Scale by Country", 
+                                                 "World Map"])
 
 ### WORLD MAP #################################################################
 
@@ -781,8 +786,12 @@ if option == "Home":
     presentation()
 # elif option == "Data":
 #     st.write("Explore your data here.")
-elif option == "Visualizations":
+elif option == "Goldstein Scale by Country":
     st.write("Check out your visualizations here.")
     visualizations()
+
+elif option == "World Map":
+    st.write("Check out your visualizations here.")
+    worldMap()
 # elif option == "Models":
 #     st.write("Run your machine learning models here.")
