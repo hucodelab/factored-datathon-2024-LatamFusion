@@ -177,10 +177,10 @@ def execute_complete_extract_load(file_url: str, filename: str, type: str) -> No
 
 @app.function_name("streaming_gdelt_events")
 @app.schedule(
-    # schedule="0 */1 * * * *",  # Uncomment for testing every minute
-    schedule="0 30 8 */1 * *",
+    schedule="0 */5 * * * *",  # Uncomment for testing every minute
+    # schedule="0 30 8 */1 * *",
     arg_name="streamingcron",
-    run_on_startup=False,  # Always False in production. True for testing only.
+    run_on_startup=True,  # Always False in production. True for testing only.
     use_monitor=False,
 )
 def streaming_gdelt_events(streamingcron) -> None:
@@ -188,7 +188,7 @@ def streaming_gdelt_events(streamingcron) -> None:
         "Azure Function triggered to fetch GDELT events and upload to blob storage."
     )
 
-    today = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
+    today = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=2)
     date = today.strftime("%Y%m%d")
     # Construct file name and URL for the GDELT file
     file_name_events = f"{date}.export.CSV.zip"
@@ -203,10 +203,10 @@ def streaming_gdelt_events(streamingcron) -> None:
 
 @app.function_name("streaming_gdelt_gkg")
 @app.schedule(
-    # schedule="0 */1 * * * *",  # Uncomment for testing every minute
-    schedule="0 30 8 */1 * *",
+    schedule="0 */5 * * * *",  # Uncomment for testing every minute
+    # schedule="0 30 8 */1 * *",
     arg_name="streamingcron",
-    run_on_startup=False,  # Always False in production. True for testing only.
+    run_on_startup=True,  # Always False in production. True for testing only.
     use_monitor=False,
 )
 def streaming_gdelt_gkg(streamingcron) -> None:
@@ -214,7 +214,7 @@ def streaming_gdelt_gkg(streamingcron) -> None:
         "Azure Function triggered to fetch GDELT GKG and upload to blob storage."
     )
 
-    today = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
+    today = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=2)
     date = today.strftime("%Y%m%d")
     # Construct file name and URL for the GDELT file
     file_name_gkg = f"{date}.gkg.csv.zip"
