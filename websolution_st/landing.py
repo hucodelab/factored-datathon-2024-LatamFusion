@@ -1,11 +1,24 @@
 # import matplotlib.pyplot as plt
+from datetime import datetime
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from pymssql import connect
 from sqlalchemy import create_engine
-from datetime import datetime
+
+### STREAMLIT CONFIGURATION ###
+
+st.set_page_config(
+    page_title="GDELT Dashboard",  # Title that appears on the browser tab
+    page_icon="./images/LatamFusionOnlyLogo.png",  # Cambiar # Favicon, you can use an emoji or a custom image path
+    layout="centered",  # Layout options: "centered" or "wide"
+    initial_sidebar_state="auto",  # Sidebar state: "auto", "expanded", "collapsed"
+)
+
+### STREAMLIT CONFIGURATION ###
+
 
 ### DATA LOADING ###
 # Azure SQL Database connection details
@@ -15,277 +28,277 @@ username = "factoredata2024admin"
 password = "mdjdmliipo3^%^$5mkkm63"
 
 fips_to_iso = {
-    'AF': 'AFG',
-    'AX': '-',
-    'AL': 'ALB',
-    'AG': 'DZA',
-    'AQ': 'ASM',
-    'AN': 'AND',
-    'AO': 'AGO',
-    'AV': 'AIA',
-    'AY': 'ATA',
-    'AC': 'ATG',
-    'AR': 'ARG',
-    'AM': 'ARM',
-    'AA': 'ABW',
-    'AT': 'AUS',
-    'AS': 'AUS',
-    'AU': 'AUT',
-    'AJ': 'AZE',
-    'BF': 'BHS',
-    'BA': 'BHR',
-    'FQ': 'UMI',
-    'BG': 'BGD',
-    'BB': 'BRB',
-    'BS': 'REU',
-    'BO': 'BLR',
-    'BE': 'BEL',
-    'BH': 'BLZ',
-    'BN': 'BEN',
-    'BD': 'BMU',
-    'BT': 'BTN',
-    'BL': 'BOL',
-    'BK': 'BIH',
-    'BC': 'BWA',
-    'BV': 'BVT',
-    'BR': 'BRA',
-    'IO': 'IOT',
-    'BX': 'BRN',
-    'BU': 'BGR',
-    'UV': 'BFA',
-    'BM': 'MMR',
-    'BY': 'BDI',
-    'CB': 'KHM',
-    'CM': 'CMR',
-    'CA': 'CAN',
-    'CV': 'CPV',
-    'CJ': 'CYM',
-    'CT': 'CAF',
-    'CD': 'TCD',
-    'CI': 'CHL',
-    'CH': 'CHN',
-    'KT': 'CXR',
-    'IP': 'CLP',
-    'CK': 'CCK',
-    'CO': 'COL',
-    'CN': 'COM',
-    'CG': 'COD',
-    'CF': 'COG',
-    'CW': 'COK',
-    'CR': 'AUS',
-    'CS': 'CRI',
-    'IV': 'CIV',
-    'HR': 'HRV',
-    'CU': 'CUB',
-    'UC': 'CUW',
-    'CY': 'CYP',
-    'EZ': 'CZE',
-    'DA': 'DNK',
-    'DX': '-',
-    'DJ': 'DJI',
-    'DO': 'DMA',
-    'DR': 'DOM',
-    'EC': 'ECU',
-    'EG': 'EGY',
-    'ES': 'SLV',
-    'EK': 'GNQ',
-    'ER': 'ERI',
-    'EN': 'EST',
-    'ET': 'ETH',
-    'PJ': '-',
-    'EU': 'REU',
-    'FK': 'FLK',
-    'FO': 'FRO',
-    'FJ': 'FJI',
-    'FI': 'FIN',
-    'FR': 'FRA',
-    'FG': 'GUF',
-    'FP': 'PYF',
-    'FS': 'ATF',
-    'GB': 'GAB',
-    'GA': 'GMB',
-    'GZ': 'PSE',
-    'GG': 'GEO',
-    'GM': 'DEU',
-    'GH': 'GHA',
-    'GI': 'GIB',
-    'GO': 'REU',
-    'GR': 'GRC',
-    'GL': 'GRL',
-    'GJ': 'GRD',
-    'GP': 'GLP',
-    'GQ': 'GUM',
-    'GT': 'GTM',
-    'GK': 'GBR',
-    'GV': 'GIN',
-    'PU': 'GNB',
-    'GY': 'GUY',
-    'HA': 'HTI',
-    'HM': 'HMD',
-    'HO': 'HND',
-    'HK': 'HKG',
-    'HQ': 'UMI',
-    'HU': 'HUN',
-    'IC': 'ISL',
-    'IN': 'IND',
-    'ID': 'IDN',
-    'IR': 'IRN',
-    'IZ': 'IRQ',
-    'EI': 'IRL',
-    'IM': 'GBR',
-    'IS': 'ISR',
-    'IT': 'ITA',
-    'JM': 'JAM',
-    'JN': 'SJM',
-    'JA': 'JPN',
-    'DQ': 'UMI',
-    'JE': 'GBR',
-    'JQ': 'UMI',
-    'JO': 'JOR',
-    'JU': 'REU',
-    'KZ': 'KAZ',
-    'KE': 'KEN',
-    'KQ': 'UMI',
-    'KR': 'KIR',
-    'KN': 'PRK',
-    'KS': 'KOR',
-    'KV': '-',
-    'KU': 'KWT',
-    'KG': 'KGZ',
-    'LA': 'LAO',
-    'LG': 'LVA',
-    'LE': 'LBN',
-    'LT': 'LSO',
-    'LI': 'LBR',
-    'LY': 'LBY',
-    'LS': 'LIE',
-    'LH': 'LTU',
-    'LU': 'LUX',
-    'MC': 'MAC',
-    'MK': 'MKD',
-    'MA': 'MDG',
-    'MI': 'MWI',
-    'MY': 'MYS',
-    'MV': 'MDV',
-    'ML': 'MLI',
-    'MT': 'MLT',
-    'RM': 'MHL',
-    'MB': 'MTQ',
-    'MR': 'MRT',
-    'MP': 'MUS',
-    'MF': 'MYT',
-    'MX': 'MEX',
-    'FM': 'FSM',
-    'MQ': 'UMI',
-    'MD': 'MDA',
-    'MN': 'MCO',
-    'MG': 'MNG',
-    'MJ': 'MNE',
-    'MH': 'MSR',
-    'MO': 'MAR',
-    'MZ': 'MOZ',
-    'BM': 'MMR',
-    'WA': 'NAM',
-    'NR': 'NRU',
-    'BQ': 'UMI',
-    'NP': 'NPL',
-    'NL': 'NLD',
-    'NC': 'NCL',
-    'NZ': 'NZL',
-    'NU': 'NIC',
-    'NG': 'NER',
-    'NI': 'NGA',
-    'NE': 'NIU',
-    'NF': 'NFK',
-    'CQ': 'MNP',
-    'NO': 'NOR',
-    'MU': 'OMN',
-    'PK': 'PAK',
-    'PS': 'PLW',
-    'LQ': 'UMI',
-    'PM': 'PAN',
-    'PP': 'PNG',
-    'PF': '-',
-    'PA': 'PRY',
-    'PE': 'PER',
-    'RP': 'PHL',
-    'PC': 'PCN',
-    'PL': 'POL',
-    'PO': 'PRT',
-    'RQ': 'PRI',
-    'QA': 'QAT',
-    'RE': 'REU',
-    'RO': 'ROU',
-    'RS': 'RUS',
-    'RW': 'RWA',
-    'TB': 'BLM',
-    'SH': 'SHN',
-    'SC': 'KNA',
-    'ST': 'LCA',
-    'RN': 'MTQ',
-    'SB': 'SPM',
-    'VC': 'VCT',
-    'WS': 'WSM',
-    'SM': 'SMR',
-    'TP': 'STP',
-    'SA': 'SAU',
-    'SG': 'SEN',
-    'RI': 'SRB',
-    'SE': 'SYC',
-    'SL': 'SLE',
-    'SN': 'SGP',
-    'NN': 'SXM',
-    'LO': 'SVK',
-    'SI': 'SVN',
-    'BP': 'SLB',
-    'SO': 'SOM',
-    'SF': 'ZAF',
-    'SX': 'SGS',
-    'OD': 'SSD',
-    'SP': 'ESP',
-    'PG': '-',
-    'CE': 'LKA',
-    'SU': 'SDN',
-    'NS': 'SUR',
-    'SV': 'SJM',
-    'WZ': 'SWZ',
-    'SW': 'SWE',
-    'SZ': 'CHE',
-    'SY': 'SYR',
-    'TW': 'TWN',
-    'TI': 'TJK',
-    'TZ': 'TZA',
-    'TH': 'THA',
-    'TT': 'TLS',
-    'TO': 'TGO',
-    'TL': 'TKL',
-    'TN': 'TON',
-    'TD': 'TTO',
-    'TE': 'UMI',
-    'TS': 'TUN',
-    'TU': 'TUR',
-    'TX': 'TKM',
-    'TK': 'TCA',
-    'TV': 'TUV',
-    'UG': 'UGA',
-    'UP': 'UKR',
-    'AE': 'ARE',
-    'UK': 'GBR',
-    'US': 'USA',
-    'UY': 'URY',
-    'UZ': 'UZB',
-    'NH': 'VUT',
-    'VT': 'VAT',
-    'VE': 'VEN',
-    'VM': 'VNM',
-    'VI': 'VGB',
-    'VQ': 'VIR',
-    '-': '-',
-    '-': '-',
-    'YM': 'YEM',
-    '-': '-',
-    'ZA': 'ZMB',
-    'ZI': 'ZWE'
+    "AF": "AFG",
+    "AX": "-",
+    "AL": "ALB",
+    "AG": "DZA",
+    "AQ": "ASM",
+    "AN": "AND",
+    "AO": "AGO",
+    "AV": "AIA",
+    "AY": "ATA",
+    "AC": "ATG",
+    "AR": "ARG",
+    "AM": "ARM",
+    "AA": "ABW",
+    "AT": "AUS",
+    "AS": "AUS",
+    "AU": "AUT",
+    "AJ": "AZE",
+    "BF": "BHS",
+    "BA": "BHR",
+    "FQ": "UMI",
+    "BG": "BGD",
+    "BB": "BRB",
+    "BS": "REU",
+    "BO": "BLR",
+    "BE": "BEL",
+    "BH": "BLZ",
+    "BN": "BEN",
+    "BD": "BMU",
+    "BT": "BTN",
+    "BL": "BOL",
+    "BK": "BIH",
+    "BC": "BWA",
+    "BV": "BVT",
+    "BR": "BRA",
+    "IO": "IOT",
+    "BX": "BRN",
+    "BU": "BGR",
+    "UV": "BFA",
+    "BM": "MMR",
+    "BY": "BDI",
+    "CB": "KHM",
+    "CM": "CMR",
+    "CA": "CAN",
+    "CV": "CPV",
+    "CJ": "CYM",
+    "CT": "CAF",
+    "CD": "TCD",
+    "CI": "CHL",
+    "CH": "CHN",
+    "KT": "CXR",
+    "IP": "CLP",
+    "CK": "CCK",
+    "CO": "COL",
+    "CN": "COM",
+    "CG": "COD",
+    "CF": "COG",
+    "CW": "COK",
+    "CR": "AUS",
+    "CS": "CRI",
+    "IV": "CIV",
+    "HR": "HRV",
+    "CU": "CUB",
+    "UC": "CUW",
+    "CY": "CYP",
+    "EZ": "CZE",
+    "DA": "DNK",
+    "DX": "-",
+    "DJ": "DJI",
+    "DO": "DMA",
+    "DR": "DOM",
+    "EC": "ECU",
+    "EG": "EGY",
+    "ES": "SLV",
+    "EK": "GNQ",
+    "ER": "ERI",
+    "EN": "EST",
+    "ET": "ETH",
+    "PJ": "-",
+    "EU": "REU",
+    "FK": "FLK",
+    "FO": "FRO",
+    "FJ": "FJI",
+    "FI": "FIN",
+    "FR": "FRA",
+    "FG": "GUF",
+    "FP": "PYF",
+    "FS": "ATF",
+    "GB": "GAB",
+    "GA": "GMB",
+    "GZ": "PSE",
+    "GG": "GEO",
+    "GM": "DEU",
+    "GH": "GHA",
+    "GI": "GIB",
+    "GO": "REU",
+    "GR": "GRC",
+    "GL": "GRL",
+    "GJ": "GRD",
+    "GP": "GLP",
+    "GQ": "GUM",
+    "GT": "GTM",
+    "GK": "GBR",
+    "GV": "GIN",
+    "PU": "GNB",
+    "GY": "GUY",
+    "HA": "HTI",
+    "HM": "HMD",
+    "HO": "HND",
+    "HK": "HKG",
+    "HQ": "UMI",
+    "HU": "HUN",
+    "IC": "ISL",
+    "IN": "IND",
+    "ID": "IDN",
+    "IR": "IRN",
+    "IZ": "IRQ",
+    "EI": "IRL",
+    "IM": "GBR",
+    "IS": "ISR",
+    "IT": "ITA",
+    "JM": "JAM",
+    "JN": "SJM",
+    "JA": "JPN",
+    "DQ": "UMI",
+    "JE": "GBR",
+    "JQ": "UMI",
+    "JO": "JOR",
+    "JU": "REU",
+    "KZ": "KAZ",
+    "KE": "KEN",
+    "KQ": "UMI",
+    "KR": "KIR",
+    "KN": "PRK",
+    "KS": "KOR",
+    "KV": "-",
+    "KU": "KWT",
+    "KG": "KGZ",
+    "LA": "LAO",
+    "LG": "LVA",
+    "LE": "LBN",
+    "LT": "LSO",
+    "LI": "LBR",
+    "LY": "LBY",
+    "LS": "LIE",
+    "LH": "LTU",
+    "LU": "LUX",
+    "MC": "MAC",
+    "MK": "MKD",
+    "MA": "MDG",
+    "MI": "MWI",
+    "MY": "MYS",
+    "MV": "MDV",
+    "ML": "MLI",
+    "MT": "MLT",
+    "RM": "MHL",
+    "MB": "MTQ",
+    "MR": "MRT",
+    "MP": "MUS",
+    "MF": "MYT",
+    "MX": "MEX",
+    "FM": "FSM",
+    "MQ": "UMI",
+    "MD": "MDA",
+    "MN": "MCO",
+    "MG": "MNG",
+    "MJ": "MNE",
+    "MH": "MSR",
+    "MO": "MAR",
+    "MZ": "MOZ",
+    "BM": "MMR",
+    "WA": "NAM",
+    "NR": "NRU",
+    "BQ": "UMI",
+    "NP": "NPL",
+    "NL": "NLD",
+    "NC": "NCL",
+    "NZ": "NZL",
+    "NU": "NIC",
+    "NG": "NER",
+    "NI": "NGA",
+    "NE": "NIU",
+    "NF": "NFK",
+    "CQ": "MNP",
+    "NO": "NOR",
+    "MU": "OMN",
+    "PK": "PAK",
+    "PS": "PLW",
+    "LQ": "UMI",
+    "PM": "PAN",
+    "PP": "PNG",
+    "PF": "-",
+    "PA": "PRY",
+    "PE": "PER",
+    "RP": "PHL",
+    "PC": "PCN",
+    "PL": "POL",
+    "PO": "PRT",
+    "RQ": "PRI",
+    "QA": "QAT",
+    "RE": "REU",
+    "RO": "ROU",
+    "RS": "RUS",
+    "RW": "RWA",
+    "TB": "BLM",
+    "SH": "SHN",
+    "SC": "KNA",
+    "ST": "LCA",
+    "RN": "MTQ",
+    "SB": "SPM",
+    "VC": "VCT",
+    "WS": "WSM",
+    "SM": "SMR",
+    "TP": "STP",
+    "SA": "SAU",
+    "SG": "SEN",
+    "RI": "SRB",
+    "SE": "SYC",
+    "SL": "SLE",
+    "SN": "SGP",
+    "NN": "SXM",
+    "LO": "SVK",
+    "SI": "SVN",
+    "BP": "SLB",
+    "SO": "SOM",
+    "SF": "ZAF",
+    "SX": "SGS",
+    "OD": "SSD",
+    "SP": "ESP",
+    "PG": "-",
+    "CE": "LKA",
+    "SU": "SDN",
+    "NS": "SUR",
+    "SV": "SJM",
+    "WZ": "SWZ",
+    "SW": "SWE",
+    "SZ": "CHE",
+    "SY": "SYR",
+    "TW": "TWN",
+    "TI": "TJK",
+    "TZ": "TZA",
+    "TH": "THA",
+    "TT": "TLS",
+    "TO": "TGO",
+    "TL": "TKL",
+    "TN": "TON",
+    "TD": "TTO",
+    "TE": "UMI",
+    "TS": "TUN",
+    "TU": "TUR",
+    "TX": "TKM",
+    "TK": "TCA",
+    "TV": "TUV",
+    "UG": "UGA",
+    "UP": "UKR",
+    "AE": "ARE",
+    "UK": "GBR",
+    "US": "USA",
+    "UY": "URY",
+    "UZ": "UZB",
+    "NH": "VUT",
+    "VT": "VAT",
+    "VE": "VEN",
+    "VM": "VNM",
+    "VI": "VGB",
+    "VQ": "VIR",
+    "-": "-",
+    "-": "-",
+    "YM": "YEM",
+    "-": "-",
+    "ZA": "ZMB",
+    "ZI": "ZWE",
 }
 
 fips_to_name = {
@@ -557,7 +570,7 @@ fips_to_name = {
     "WI": "Western Sahara",
     "YM": "Yemen",
     "ZA": "Zambia",
-    "ZI": "Zimbabwe"
+    "ZI": "Zimbabwe",
 }
 
 connection_string = "mssql+pyodbc://factoredata2024admin:mdjdmliipo3^%^$5mkkm63@factoredata2024.database.windows.net/dactoredata2024?driver=ODBC+Driver+18+for+SQL+Server"
@@ -648,10 +661,13 @@ The project is composed of different directories used in different stages during
 """
     )
 
-    st.image("images/Architecture_LatamFusion.png", caption="Architecture of the LatamFusion Project")
+    st.image(
+        "images/Architecture_LatamFusion.png",
+        caption="Architecture of the LatamFusion Project",
+    )
 
     st.markdown(
-    """
+        """
 ## Deployment
 Take a look of the latest version of our product here: https://latamfusionapp.azurewebsites.net/
 
@@ -672,6 +688,7 @@ The team members are:
 """
     )
 
+
 def generate_alerts(df, country):
     """
     Generates alerts when y_pred is lower than the threshold in the future,
@@ -683,35 +700,36 @@ def generate_alerts(df, country):
     """
 
     # Calculate threshold
-    y_pred_mean = df['y_pred'].mean()
-    y_pred_min = df['y_pred'].min()
+    y_pred_mean = df["y_pred"].mean()
+    y_pred_min = df["y_pred"].min()
     distance = y_pred_mean - y_pred_min
-    threshold = y_pred_mean - 0.3 * distance  # Threshold at 30% distance from mean towards minimum
+    threshold = (
+        y_pred_mean - 0.3 * distance
+    )  # Threshold at 30% distance from mean towards minimum
 
     # Filter future dates
     today = pd.Timestamp.today()
-    df_future = df[df['DATE'] > today]
+    df_future = df[df["DATE"] > today]
 
     # Identify alerts
-    alerts = df_future[df_future['y_pred'] < threshold]
+    alerts = df_future[df_future["y_pred"] < threshold]
 
     # Group by date and take the first record of each day
-    alerts = alerts.groupby('DATE').first().reset_index()
+    alerts = alerts.groupby("DATE").first().reset_index()
 
     # Display alerts in Streamlit
     if not alerts.empty:
         st.warning(f"Alerts for {country}: There are alerts on the following days:")
-        #st.write(alerts[['DATE', 'y_pred', 'y_real']])
-        st.table(alerts[['DATE', 'y_pred']])
+        # st.write(alerts[['DATE', 'y_pred', 'y_real']])
+        st.table(alerts[["DATE", "y_pred"]])
     else:
         st.success(f"No alerts for {country}.")
 
-def goldsteinScale():
 
+def goldsteinScale():
     st.header("Goldstein Scale")
 
     if goldstein_data is not None and not goldstein_data.empty:
-
         # Convert 'DATE' column to datetime
         goldstein_data["DATE"] = pd.to_datetime(goldstein_data["DATE"])
 
@@ -726,10 +744,10 @@ def goldsteinScale():
         df_filtered = goldstein_data[goldstein_data["pais"] == country]
         df_filtered = df_filtered.sort_values(by="DATE")
 
-        y_pred_mean = df_filtered['y_pred'].mean()
+        y_pred_mean = df_filtered["y_pred"].mean()
 
         # Calcular el valor mínimo de las predicciones
-        y_pred_min = df_filtered['y_pred'].min()
+        y_pred_min = df_filtered["y_pred"].min()
 
         # Calcular la diferencia entre la media y el mínimo
         diff_mean_min = y_pred_mean - y_pred_min
@@ -741,37 +759,43 @@ def goldsteinScale():
         fig = go.Figure()
 
         # Add the 'y_pred' as a dashed line
-        fig.add_trace(go.Scatter(
-            x=df_filtered['DATE'],
-            y=df_filtered['y_pred'],
-            mode='lines',
-            name='Predicted',
-            line=dict(dash='dot')  # Dashed line
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=df_filtered["DATE"],
+                y=df_filtered["y_pred"],
+                mode="lines",
+                name="Predicted",
+                line=dict(dash="dot"),  # Dashed line
+            )
+        )
 
         # Add the 'y_real' as a solid line
-        fig.add_trace(go.Scatter(
-            x=df_filtered['DATE'],
-            y=df_filtered['y_real'],
-            mode='lines',
-            name='Real',
-            line=dict(dash='solid')  # Solid line
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=df_filtered["DATE"],
+                y=df_filtered["y_real"],
+                mode="lines",
+                name="Real",
+                line=dict(dash="solid"),  # Solid line
+            )
+        )
 
-        fig.add_trace(go.Scatter(
-            x=df_filtered['DATE'],
-            y=[threshold_30] * len(df_filtered),
-            mode='lines',
-            name='30% Threshold from Mean',
-            line=dict(dash='dash', color='orange', width=1)
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=df_filtered["DATE"],
+                y=[threshold_30] * len(df_filtered),
+                mode="lines",
+                name="30% Threshold from Mean",
+                line=dict(dash="dash", color="orange", width=1),
+            )
+        )
 
         # Customize layout
         fig.update_layout(
-            title=f'Time Series of the Goldstein Scale Average Index for: {selected_name}',
-            xaxis_title='Date',
-            yaxis_title='Values',
-            legend_title='Type'
+            title=f"Time Series of the Goldstein Scale Average Index for: {selected_name}",
+            xaxis_title="Date",
+            yaxis_title="Values",
+            legend_title="Type",
         )
 
         # Display plot in Streamlit
@@ -788,35 +812,34 @@ def goldsteinScale():
         generate_alerts(df_filtered, country)
     else:
         st.warning("No data available to plot.")
-    
-
 
 
 ### WORLD MAP #################################################################
 def worldMap():
-
     st.header("World Map")
 
     # Filter the DataFrame to include only today's data (update date as needed)
     df = goldstein_data
 
     # Add a date selector for the map
-    selected_date = st.date_input("Select Date for World Map", value=datetime(2024, 7, 30))
+    selected_date = st.date_input(
+        "Select Date for World Map", value=datetime(2024, 7, 30)
+    )
 
-    df['iso_country'] = df['pais'].map(fips_to_iso)
+    df["iso_country"] = df["pais"].map(fips_to_iso)
 
     # Filter the DataFrame to include only data for the selected date
-    df_today = df[df['DATE'].dt.date == selected_date]
+    df_today = df[df["DATE"].dt.date == selected_date]
 
     if not df_today.empty:
         # Create the interactive choropleth map
         fig_choropleth = px.choropleth(
-            df_today, 
-            locations='iso_country', 
-            locationmode='ISO-3',
-            color='y_real',
-            color_continuous_scale='RdYlGn',  # Color scale
-            title='World Map with Goldstein scale average index for each country'
+            df_today,
+            locations="iso_country",
+            locationmode="ISO-3",
+            color="y_real",
+            color_continuous_scale="RdYlGn",  # Color scale
+            title="World Map with Goldstein scale average index for each country",
         )
 
         # Display the choropleth map in Streamlit
@@ -827,12 +850,12 @@ def worldMap():
     if not df_today.empty:
         # Create the interactive choropleth map
         fig_choropleth = px.choropleth(
-            df_today, 
-            locations='iso_country', 
-            locationmode='ISO-3',
-            color='y_pred',
-            color_continuous_scale='Purples',  # Color scale
-            title='World Map with Goldstein scale average index predictions for each country'
+            df_today,
+            locations="iso_country",
+            locationmode="ISO-3",
+            color="y_pred",
+            color_continuous_scale="Purples",  # Color scale
+            title="World Map with Goldstein scale average index predictions for each country",
         )
 
         # Display the choropleth map in Streamlit
@@ -848,8 +871,9 @@ st.sidebar.title("Navigation")
 st.sidebar.write("Use this panel to navigate through different sections.")
 
 # Sidebar options
-option = st.sidebar.selectbox("Choose a page:", ["Home", "Goldstein Scale by Country", 
-                                                 "World Map"])
+option = st.sidebar.selectbox(
+    "Choose a page:", ["Home", "Goldstein Scale by Country", "World Map"]
+)
 
 ### WORLD MAP #################################################################
 
