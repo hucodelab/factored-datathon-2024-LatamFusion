@@ -575,35 +575,37 @@ fips_to_name = {
 
 connection_string = "mssql+pyodbc://factoredata2024admin:mdjdmliipo3^%^$5mkkm63@factoredata2024.database.windows.net/dactoredata2024?driver=ODBC+Driver+18+for+SQL+Server"
 
-# conn = create_engine(connection_string)
-# Create pymssql connection
-conn = connect(
-    server=server,
-    user=username,
-    password=password,
-    database=database,
-)
 
-query_goldstein = """
-SELECT [DATE]
-    ,[pais]
-    ,[y_pred]
-    ,[y_real]
-FROM [events].[goldsteinPredictionsGold];
-"""
+@st.cache_data(ttl=60 * 60 * 12)  # Cache the data for 5 minutes (TTL: Time to Live)
+def load_data():
+    conn = connect(
+        server=server,
+        user=username,
+        password=password,
+        database=database,
+    )
 
-goldstein_data = pd.read_sql(query_goldstein, conn)
+    query_goldstein = """
+    SELECT [DATE], [pais], [y_pred], [y_real]
+    FROM [events].[goldsteinPredictionsGold];
+    """
+    goldstein_data = pd.read_sql(query_goldstein, conn)
 
-query_tone = """
-SELECT 
-      [DATE]
-    ,[Country]
-    ,[y_pred]
-    ,[y_real]
-FROM [gkg].[tonePredictionsGold];
-"""
+    query_tone = """
+    SELECT [DATE], [Country], [y_pred], [y_real]
+    FROM [gkg].[tonePredictionsGold];
+    """
+    tone_data = pd.read_sql(query_tone, conn)
 
-tone_data = pd.read_sql(query_tone, conn)
+    last_refreshed = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return goldstein_data, tone_data, last_refreshed
+
+
+goldstein_data, tone_data, last_refreshed = (
+    load_data()
+)  # Data will be cached and refreshed every 5 minutes
+
 
 ### DATA END ###
 
@@ -937,6 +939,8 @@ st.sidebar.write("Use this panel to navigate through different sections.")
 option = st.sidebar.selectbox(
     "Choose a page:", ["Home", "Goldstein Scale by Country", "World Map"]
 )
+
+st.sidebar.write("Last updated on:", last_refreshed, "UTC")
 
 ### WORLD MAP #################################################################
 
