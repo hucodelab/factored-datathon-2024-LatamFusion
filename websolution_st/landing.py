@@ -672,6 +672,40 @@ The team members are:
 """
     )
 
+def generate_alerts(df, country):
+    """
+    Generates alerts when y_pred is lower than the threshold in the future,
+    with one alert per day, even if there are multiple records on the same day.
+
+    Parameters:
+    - df: DataFrame with columns ['DATE', 'Country', 'y_pred', 'y_real', 'y_pred_plus_one'].
+    - Country: Name of the country for which to perform the analysis.
+    """
+
+    # Calculate threshold
+    y_pred_mean = df['y_pred'].mean()
+    y_pred_min = df['y_pred'].min()
+    distance = y_pred_mean - y_pred_min
+    threshold = y_pred_mean - 0.3 * distance  # Threshold at 30% distance from mean towards minimum
+
+    # Filter future dates
+    today = pd.Timestamp.today()
+    df_future = df[df['DATE'] > today]
+
+    # Identify alerts
+    alerts = df_future[df_future['y_pred'] < threshold]
+
+    # Group by date and take the first record of each day
+    alerts = alerts.groupby('DATE').first().reset_index()
+
+    # Display alerts in Streamlit
+    if not alerts.empty:
+        st.warning(f"Alerts for {country}: There are alerts on the following days:")
+        #st.write(alerts[['DATE', 'y_pred', 'y_real']])
+        st.table(alerts[['DATE', 'y_pred']])
+    else:
+        st.success(f"No alerts for {country}.")
+
 def goldsteinScale():
 
     st.header("Goldstein Scale")
@@ -742,17 +776,20 @@ def goldsteinScale():
 
         # Display plot in Streamlit
         st.plotly_chart(fig, use_container_width=True)
+
+        # Description
+        st.write("""
+        The Goldstein Scale Average Index is a numeric score ranging from -10 to +10, 
+        representing the theoretical potential impact of events on a country's stability. 
+        This index is based on news coverage of various events occurring in each country. 
+        The type of event and its media coverage affect the stability of the country.
+        """)
+
+        generate_alerts(df_filtered, country)
     else:
         st.warning("No data available to plot.")
     
-    # Description
-    st.write("""
-    The Goldstein Scale Average Index is a numeric score ranging from -10 to +10, 
-    representing the theoretical potential impact of events on a country's stability. 
-    This index is based on news coverage of various events occurring in each country. 
-    The type of event and its media coverage affect the stability of the country.
-    \n\n
-    """)
+
 
 
 ### WORLD MAP #################################################################
