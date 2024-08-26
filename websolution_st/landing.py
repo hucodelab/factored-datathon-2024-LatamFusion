@@ -458,6 +458,7 @@ fips_to_name = {
     "MH": "Montserrat",
     "MO": "Morocco",
     "MZ": "Mozambique",
+    "BM": "Myanmar",
     "WA": "Namibia",
     "NR": "Nauru",
     "BQ": "Navassa Island",
@@ -466,7 +467,8 @@ fips_to_name = {
     "NC": "New Caledonia",
     "NZ": "New Zealand",
     "NU": "Nicaragua",
-    "NG": "Nigeria",
+    "NG": "Niger",
+    "NI": "Nigeria",
     "NE": "Niue",
     "NF": "Norfolk Island",
     "CQ": "Northern Mariana Islands",
@@ -478,7 +480,7 @@ fips_to_name = {
     "PM": "Panama",
     "PP": "Papua New Guinea",
     "PF": "Paracel Islands",
-    "PY": "Paraguay",
+    "PA": "Paraguay",
     "PE": "Peru",
     "RP": "Philippines",
     "PC": "Pitcairn Islands",
@@ -520,41 +522,42 @@ fips_to_name = {
     "SU": "Sudan",
     "NS": "Suriname",
     "SV": "Svalbard",
-    "SZ": "Sweden",
-    "SW": "Switzerland",
+    "WZ": "Swaziland",
+    "SW": "Sweden",
+    "SZ": "Switzerland",
     "SY": "Syria",
-    "TA": "Taiwan",
-    "TJ": "Tajikistan",
+    "TW": "Taiwan",
+    "TI": "Tajikistan",
     "TZ": "Tanzania",
     "TH": "Thailand",
-    "TL": "Timor-Leste",
-    "TG": "Togo",
-    "TK": "Tokelau",
-    "TO": "Tonga",
-    "TT": "Trinidad and Tobago",
-    "TN": "Tunisia",
-    "TR": "Turkey",
+    "TO": "Togo",
+    "TL": "Tokelau",
+    "TN": "Tonga",
+    "TD": "Trinidad and Tobago",
+    "TE": "Tromelin Island",
+    "TS": "Tunisia",
+    "TU": "Turkey",
     "TX": "Turkmenistan",
-    "TC": "Tuvalu",
+    "TK": "Turks and Caicos Islands",
+    "TV": "Tuvalu",
     "UG": "Uganda",
-    "UA": "Ukraine",
+    "UP": "Ukraine",
     "AE": "United Arab Emirates",
-    "GB": "United Kingdom",
-    "US": "United States of America",
-    "UM": "United States Minor Outlying Islands",
+    "UK": "United Kingdom",
+    "US": "United States",
     "UY": "Uruguay",
     "UZ": "Uzbekistan",
-    "VU": "Vanuatu",
-    "VA": "Vatican City",
+    "NH": "Vanuatu",
     "VE": "Venezuela",
-    "VN": "Vietnam",
-    "VG": "Virgin Islands, British",
-    "VI": "Virgin Islands, U.S.",
+    "VM": "Vietnam",
+    "VQ": "Virgin Islands",
+    "WQ": "Wake Island",
     "WF": "Wallis and Futuna",
-    "WS": "Western Sahara",
-    "YE": "Yemen",
-    "ZM": "Zambia",
-    "ZW": "Zimbabwe"
+    "WE": "West Bank",
+    "WI": "Western Sahara",
+    "YM": "Yemen",
+    "ZA": "Zambia",
+    "ZI": "Zimbabwe"
 }
 
 connection_string = "mssql+pyodbc://factoredata2024admin:mdjdmliipo3^%^$5mkkm63@factoredata2024.database.windows.net/dactoredata2024?driver=ODBC+Driver+18+for+SQL+Server"
@@ -642,9 +645,13 @@ The project is composed of different directories used in different stages during
 * web_solution: deploying of the solution in a web app using Taipy.
 
 ## Architecture
+"""
+    )
 
-![Architecture](/images/Architecture_LatamFusion.png)
+    st.image("images/Architecture_LatamFusion.png", caption="Architecture of the LatamFusion Project")
 
+    st.markdown(
+    """
 ## Deployment
 Take a look of the latest version of our product here: https://latamfusionapp.azurewebsites.net/
 
@@ -665,7 +672,43 @@ The team members are:
 """
     )
 
-def visualizations():
+def generate_alerts(df, country):
+    """
+    Generates alerts when y_pred is lower than the threshold in the future,
+    with one alert per day, even if there are multiple records on the same day.
+
+    Parameters:
+    - df: DataFrame with columns ['DATE', 'Country', 'y_pred', 'y_real', 'y_pred_plus_one'].
+    - Country: Name of the country for which to perform the analysis.
+    """
+
+    # Calculate threshold
+    y_pred_mean = df['y_pred'].mean()
+    y_pred_min = df['y_pred'].min()
+    distance = y_pred_mean - y_pred_min
+    threshold = y_pred_mean - 0.3 * distance  # Threshold at 30% distance from mean towards minimum
+
+    # Filter future dates
+    today = pd.Timestamp.today()
+    df_future = df[df['DATE'] > today]
+
+    # Identify alerts
+    alerts = df_future[df_future['y_pred'] < threshold]
+
+    # Group by date and take the first record of each day
+    alerts = alerts.groupby('DATE').first().reset_index()
+
+    # Display alerts in Streamlit
+    if not alerts.empty:
+        st.warning(f"Alerts for {country}: There are alerts on the following days:")
+        #st.write(alerts[['DATE', 'y_pred', 'y_real']])
+        st.table(alerts[['DATE', 'y_pred']])
+    else:
+        st.success(f"No alerts for {country}.")
+
+def goldsteinScale():
+
+    st.header("Goldstein Scale")
 
     if goldstein_data is not None and not goldstein_data.empty:
 
@@ -682,6 +725,17 @@ def visualizations():
         # Filter data based on the selected country
         df_filtered = goldstein_data[goldstein_data["pais"] == country]
         df_filtered = df_filtered.sort_values(by="DATE")
+
+        y_pred_mean = df_filtered['y_pred'].mean()
+
+        # Calcular el valor mínimo de las predicciones
+        y_pred_min = df_filtered['y_pred'].min()
+
+        # Calcular la diferencia entre la media y el mínimo
+        diff_mean_min = y_pred_mean - y_pred_min
+
+        # Calcular el umbral al 30% de distancia desde la media
+        threshold_30 = y_pred_mean - (diff_mean_min * 0.3)
 
         # Plot the time series using Plotly graph_objects
         fig = go.Figure()
@@ -704,6 +758,14 @@ def visualizations():
             line=dict(dash='solid')  # Solid line
         ))
 
+        fig.add_trace(go.Scatter(
+            x=df_filtered['DATE'],
+            y=[threshold_30] * len(df_filtered),
+            mode='lines',
+            name='30% Threshold from Mean',
+            line=dict(dash='dash', color='orange', width=1)
+        ))
+
         # Customize layout
         fig.update_layout(
             title=f'Time Series of the Goldstein Scale Average Index for: {selected_name}',
@@ -714,17 +776,21 @@ def visualizations():
 
         # Display plot in Streamlit
         st.plotly_chart(fig, use_container_width=True)
+
+        # Description
+        st.write("""
+        The Goldstein Scale Average Index is a numeric score ranging from -10 to +10, 
+        representing the theoretical potential impact of events on a country's stability. 
+        This index is based on news coverage of various events occurring in each country. 
+        The type of event and its media coverage affect the stability of the country.
+        """)
+
+        generate_alerts(df_filtered, country)
     else:
         st.warning("No data available to plot.")
     
-    # Description
-    st.write("""
-    The Goldstein Scale Average Index is a numeric score ranging from -10 to +10, 
-    representing the theoretical potential impact of events on a country's stability. 
-    This index is based on news coverage of various events occurring in each country. 
-    The type of event and its media coverage affect the stability of the country.
-    \n\n
-    """)
+
+
 
 ### WORLD MAP #################################################################
 def worldMap():
@@ -794,8 +860,8 @@ if option == "Home":
 # elif option == "Data":
 #     st.write("Explore your data here.")
 elif option == "Goldstein Scale by Country":
-    st.write("Check out your visualizations here.")
-    visualizations()
+    # st.write("Check out your visualizations here.")
+    goldsteinScale()
 
 elif option == "World Map":
     worldMap()
