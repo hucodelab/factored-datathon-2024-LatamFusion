@@ -759,9 +759,6 @@ def generate_past_alerts(df, country):
     else:
         st.success(f"No past alerts for {country}.")
 
-
-def goldsteinScale():
-
 def goldsteinScale():
     st.header("Goldstein Scale")
 
