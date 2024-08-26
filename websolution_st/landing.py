@@ -583,7 +583,7 @@ goldstein_data = pd.read_sql(query_goldstein, conn)
 
 query_tone = """
 SELECT 
-     [DATE]
+      [DATE]
     ,[Country]
     ,[y_pred]
     ,[y_real]
@@ -706,6 +706,41 @@ def generate_alerts(df, country):
     else:
         st.success(f"No alerts for {country}.")
 
+def generate_past_alerts(df, country):
+    """
+    Generates alerts when y_pred is lower than the threshold in the future,
+    with one alert per day, even if there are multiple records on the same day.
+
+    Parameters:
+    - df: DataFrame with columns ['DATE', 'Country', 'y_pred', 'y_real', 'y_pred_plus_one'].
+    - Country: Name of the country for which to perform the analysis.
+    """
+
+    # Calculate threshold
+    y_real_mean = df['y_real'].mean()
+    y_real_min = df['y_real'].min()
+    distance = y_real_mean - y_real_min
+    threshold = y_real_mean - 0.70 * distance  # Threshold at 70% distance from mean towards minimum
+
+    # Filter future dates
+    today = pd.Timestamp.today()
+    df_past = df[df['DATE'] < today]
+
+    # Identify alerts
+    past_alerts = df_past[df_past['y_real'] < threshold]
+
+    # Group by date and take the first record of each day
+    past_alerts = past_alerts.groupby('DATE').first().reset_index()
+
+    # Display alerts in Streamlit
+    if not past_alerts.empty:
+        st.info(f"Past alerts for {country}: There were alerts on the following past days:")
+        #st.write(alerts[['DATE', 'y_pred', 'y_real']])
+        st.table(past_alerts[['DATE', 'y_real']])
+    else:
+        st.success(f"No past alerts for {country}.")
+
+
 def goldsteinScale():
 
     st.header("Goldstein Scale")
@@ -737,6 +772,17 @@ def goldsteinScale():
         # Calcular el umbral al 30% de distancia desde la media
         threshold_30 = y_pred_mean - (diff_mean_min * 0.3)
 
+        y_real_mean = df_filtered['y_real'].mean()
+
+        # Calcular el valor mínimo de las predicciones
+        y_real_min = df_filtered['y_real'].min()
+
+        # Calcular la diferencia entre la media y el mínimo
+        diff_real_mean_min = y_real_mean - y_real_min
+
+        # Calcular el umbral al 30% de distancia desde la media
+        threshold_70 = y_real_mean - (diff_real_mean_min * 0.7)
+
         # Plot the time series using Plotly graph_objects
         fig = go.Figure()
 
@@ -762,8 +808,16 @@ def goldsteinScale():
             x=df_filtered['DATE'],
             y=[threshold_30] * len(df_filtered),
             mode='lines',
-            name='30% Threshold from Mean',
+            name='30% Threshold from Pred Mean',
             line=dict(dash='dash', color='orange', width=1)
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=df_filtered['DATE'],
+            y=[threshold_70] * len(df_filtered),
+            mode='lines',
+            name='70% Threshold from Real Mean',
+            line=dict(dash='dash', color='purple', width=1)
         ))
 
         # Customize layout
@@ -786,6 +840,7 @@ def goldsteinScale():
         """)
 
         generate_alerts(df_filtered, country)
+        generate_past_alerts(df_filtered, country)
     else:
         st.warning("No data available to plot.")
     
@@ -802,6 +857,10 @@ def worldMap():
 
     # Add a date selector for the map
     selected_date = st.date_input("Select Date for World Map", value=datetime(2024, 7, 30))
+
+    st.write("""
+    Please, select a date between 2023-09-14 and today
+    """)
 
     df['iso_country'] = df['pais'].map(fips_to_iso)
 
@@ -824,10 +883,20 @@ def worldMap():
     else:
         st.warning("No data available for the specified date.")
 
-    if not df_today.empty:
+
+    selected_date_future = st.date_input("Select Date for World Map", value=datetime(2024, 9, 20))
+    
+    st.write("""
+    Please, select a date between today and the next 30 days (to view predictions)
+    """)
+
+    # Filter the DataFrame to include only data for the selected date
+    df_tomorrow = df[df['DATE'].dt.date == selected_date_future]
+
+    if not df_tomorrow.empty:
         # Create the interactive choropleth map
         fig_choropleth = px.choropleth(
-            df_today, 
+            df_tomorrow, 
             locations='iso_country', 
             locationmode='ISO-3',
             color='y_pred',
